@@ -1,7 +1,8 @@
 from numpy import random
 numberofdataPoints = 100
-numberofclusers = 3
+numberofclusers = 4
 dimensions = 3
+k=25
 def getDataPoints(part,d,clu):
     ret = [[] for j in xrange(part*clu)]
     for i in range(clu):
@@ -40,26 +41,14 @@ def sqdistance(a,b):
     
     return bb
     
-    
-def getBandwidth(curPt):
+
+def getBandwidth(vec, d,k):
     '''
     return distance of kth nearest neighbor
-
-
-
-
-    function bandwidth = getBandWith(curDataPoint,origDataPoints,euclideanDist,useKNNToGetH)
-            if (useKNNToGetH == false)
-                    bandwidth = H;
-            else:
-                    [sortedEuclideanDist,indexInOrig] = sort(euclideanDist);
-                    bandwidth = sortedEuclideanDist(k);
-            end
-    end
-    
     '''
-    return 1.0
-#print sqdistance([1,2,3],[[1,2,4],[3,1,2],[4,1,2],[4,1,2],[4,1,2],[4,5,7]])
+    return sorted(d)[k]
+
+
 
 import copy
 from math import exp
@@ -67,7 +56,6 @@ def doMeanShift(dataPoints):
     '''
         perform the mean shift operations
     '''
-
     origData = copy.deepcopy(dataPoints)
     
     threshold = 1e-3
@@ -76,7 +64,8 @@ def doMeanShift(dataPoints):
         diff = threshold+1
         while diff > threshold:
             d = sqdistance(vec,origData)
-            bandwidth= getBandwidth(vec)
+            
+            bandwidth= getBandwidth(vec,d,int(k))
             kernelDist = [exp(-dd)/(bandwidth*bandwidth) for dd in d]
             
             numerator = [0.0]*len(vec)
@@ -97,7 +86,7 @@ def doMeanShift(dataPoints):
         print diff
     return newVecs
         
-V = doMeanShift(pts)
+
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -106,17 +95,62 @@ import matplotlib.pyplot as plt
 fig = plt.figure(1)
 ax = Axes3D(fig)
 
-x = [p[0] for p in pts]
-y = [p[1] for p in pts]
-z = [p[2] for p in pts]
 
-ax.scatter(x,y,z, marker='o')
-
+V = doMeanShift(pts)
 x = [p[0] for p in V]
 y = [p[1] for p in V]
 z = [p[2] for p in V]
 
-ax.scatter(x,y,z, marker='x')
+
+
+def dist(a,b):return sum((a[i]-b[i])**2 for i in xrange(len(a)))
+
+colorpalette = ['blue','green','red','purple','yellow','orange','gray','brown','magenta','cyan','white']
+clucolors = ['']*len(pts)
+clu = [V[0]]
+for p in range(len(V)):
+    lst = 10000.
+    
+    for c in range(len(clu)):
+        if dist(V[p],clu[c]) <lst:
+            lst = dist(V[p],clu[c])
+            clucolors[p]=colorpalette[c]
+            
+    if lst > 1e-2:
+        
+        clucolors[p]=colorpalette[len(clu)]
+        clu.append(V[p])
+        
+    
+
+
+ax.scatter(x,y,z, color=clucolors, marker='x')
+
+
+
+x = [p[0] for p in pts]
+y = [p[1] for p in pts]
+z = [p[2] for p in pts]
+
+
+
+
+
+clucolors = ['']*len(pts)
+for p in range(len(V)):
+    lst = 10000.
+    
+    for c in range(len(clu)):
+        if dist(V[p],clu[c]) <lst:
+            lst = dist(V[p],clu[c])
+            clucolors[p]=colorpalette[c]
+            
+        
+
+
+ax.scatter(x,y,z, color=clucolors,marker='o')
+
+
 plt.show()
 
 
