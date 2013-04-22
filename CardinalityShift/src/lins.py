@@ -64,7 +64,7 @@ def shift(D):
 from numpy import *
 
 def pr(n,m): return sum(eye(m) - dot(random.randn(m,n),random.randn(n,m))/float(m*m))
-'''
+
 
 avgs = []
 for i in range(100):
@@ -76,7 +76,7 @@ def check(a,s,P):
     a = array(a)
     s = array(s)
     return abs(sum((dot(dot(s,P.T) + a,P)) - (s+dot(a,P))))#<.00000001
-'''
+
 def generatePts(n,l):
      a = random.randn(1,n)
      s = random.randn(1,l)
