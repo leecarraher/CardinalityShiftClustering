@@ -1,13 +1,13 @@
 from numpy import random
-numberofdataPoints = 50
+numberofdataPoints = 200
 numberofclusers = 5
 dimensions = 3
-k=50
+k=100
 def getDataPoints(part,d,clu):
     ret = [[] for j in xrange(part*clu)]
     clusterCenters = []
     for i in range(clu):
-        variance = .3+random.random()*5
+        variance = .3+random.random()*4
         means = [random.random(1)*10 for b in range(d)] 
         clusterCenters.append(means)
         for j in range(part):
@@ -36,11 +36,30 @@ def sqdistance(a,b):
     
     return bb
 
-def getBandwidth(vec, d,k):
+def getBandwidth(vec, d):
     '''
     return distance of kth nearest neighbor
     '''
-    return d[k]
+    l = sorted(d)
+    return l[k-1]
+
+def prune(vec,d):
+    '''
+        this is where lsh db-gen would be
+    '''
+    l =sqdistance(vec,d)
+    
+    dist = sorted( [ (l[i] , i)   for i in xrange(len(d))] ) 
+    
+    ret = [[]]*k
+    
+    
+    for i in xrange(k):
+        ret[i] = d[ dist[i][1] ]
+
+
+    return ret
+    
 
 import copy
 from math import exp
@@ -48,47 +67,48 @@ def doMeanShift(dataPoints):
     '''
         perform the mean shift operations
     '''
+    
     origData = copy.deepcopy(dataPoints)
     
-    threshold = 1e-5
+    threshold = 1e-4
     newVecs = []
+    
+
     for vec in dataPoints:
         diff = threshold+1
+
+        pruned =origData# prune(vec,origData)       
+        
         while diff > threshold:
-            d = sqdistance(vec,origData)
-            
-            #starts
-            d = sorted(d)
-            bandwidth= getBandwidth(vec,d,int(k))
-            
-            kernelDist = [exp(-dd)/(bandwidth*bandwidth) for dd in d[:k]]
-            numerator = [0.0]*len(vec)
-            
-            for i in xrange(len(vec)):
-                for j in xrange(len(kernelDist)):
-                    numerator[i] +=  kernelDist[j] * origData[j][i]
-            '''
+            d = sqdistance(vec,pruned)
+            bandwidth= getBandwidth(vec,d)
             kernelDist = [exp(-dd)/(bandwidth*bandwidth) for dd in d] 
             numerator = [0.0]*len(vec)      
             for i in xrange(len(vec)):
                 for j in xrange(len(kernelDist)):
                     numerator[i] +=  kernelDist[j] * origData[j][i]         
-            '''
             denom = sum(kernelDist)          
             tmp = [num/denom for num in numerator] 
             diff = max([abs(tmp[i]-vec[i]) for i in xrange(len(vec)) ] )
             vec = tmp
+            
         newVecs.append(vec)   
+        
+        
         print diff
     return newVecs
         
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+from random import shuffle
 
 fig = plt.figure(1)
 ax = Axes3D(fig)
 
 pts,cntrs =  getDataPoints(numberofdataPoints,dimensions,numberofclusers)
+
+shuffle(pts)
+
 
 V = doMeanShift(pts)
 x = [p[0] for p in V]
@@ -105,9 +125,9 @@ for p in range(len(V)):
     for c in range(len(clu)):
         if dist(V[p],clu[c]) <lst:
             lst = dist(V[p],clu[c])
-            clucolors[p]=colorpalette[c]    
-    if lst > 1e-3:
-        clucolors[p]=colorpalette[len(clu)]
+            clucolors[p]=colorpalette[c % len(colorpalette)]    
+    if lst > 1e-2:
+        clucolors[p]=colorpalette[ len(clu) % (len(colorpalette))]
         clu.append(V[p])
 ax.scatter(x,y,z, color=clucolors, marker='x')
 x = [p[0] for p in pts]
@@ -121,7 +141,7 @@ for p in range(len(V)):
     for c in range(len(clu)):
         if dist(V[p],clu[c]) <lst:
             lst = dist(V[p],clu[c])
-            clucolors[p]=colorpalette[c]
+            clucolors[p]=colorpalette[c% len(colorpalette)]
 ax.scatter(x,y,z, color=clucolors,marker='o')
 
 print "Original Centers"
