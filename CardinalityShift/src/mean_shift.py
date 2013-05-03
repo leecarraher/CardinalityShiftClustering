@@ -7,7 +7,7 @@ def getDataPoints(part,d,clu):
     ret = [[] for j in xrange(part*clu)]
     clusterCenters = []
     for i in range(clu):
-        variance = .3+random.random()*4
+        variance = .5+random.random()*4
         means = [random.random(1)*10 for b in range(d)] 
         clusterCenters.append(means)
         for j in range(part):

@@ -155,34 +155,38 @@ def generateRandomProj(k,sim,d):
     return M
     
 
-def decodeGt24(v,M,minVal,maxVal,rand=False):
+def decodeGt24(v,M,minVal,maxVal,rand=0):
     scale(v,minVal,maxVal,0.0,1.0)
     distance = 0.0
     hashVal = 0
+    lenM = rand
+    if rand==0:lenM = len(M)
     
-    for i in xrange(len(M)):
-        vproj = dot(v,M[i]).tolist()
-        if rand:vproj=[vhat+gauss(0,.047)/sc for vhat in vproj]
+    for i in xrange(lenM):
+        vproj = []
+        if rand==0: vproj = dot(v,M[i]).tolist()
+        else: vproj=[vhat+gauss(0,1.0)/sc for vhat in vproj]
         dec = decode(vproj)
 
         distance = distance + 1.0/(dec[1]+1.0)
-        hashVal=dec[0]#hashVal+ (dec[0]<< (24*i))
+        hashVal=hashVal+ (dec[0]<< (24*i))
+        
     return convert2Bytes(hashVal)
 
 
 def buildDB(data,minVal=0.0,maxVal=1.0):
     n = len(data)
     d = len(data[0])
-    #parameters
+    #parameters based on the collision 2x probabilities
     P1=.01779
     P2=.0000156
     rho = log(P1)/log(P2)
-    k =  int((log(n)/log( 1/P2)+.5))
-    sim = int(log(n)+.5)
+    k =  int((log(n)/log( 1/P2)+.5))# length of concatenations, increases specificity
+    sim = int(log(n)+.5)# number of probes, increases probability of intersection
     
     M = generateRandomProj(k,sim,d)
     
-    print n**rho,k,sim
+    #print n**rho,k,sim
     
     DBs = [{} for s in xrange(sim)]
     for s in xrange(sim):
@@ -195,7 +199,32 @@ def buildDB(data,minVal=0.0,maxVal=1.0):
                     
     return DBs,M
     
+    
+def queryRand(q,DBs,n,l=1000,minVal=0.0,maxVal=1.0):
+        #parameters
+    P1=.01779
+    P2=.0000156
+    rho = log(P1)/log(P2)
+    s = len(DBs)
+    candidates = set()
+    
+    for r in xrange(int(n**rho+.5)):
+            hashVal = decodeGt24(q,minVal,maxVal,3)
+            if DBs[s].has_key(hashVal):
+                
+                for c in DBs[s][hashVal]:
+                    candidates.add(c)
+            if len(candidates)>2*l:return candidates  
+            
+            
+    return candidates
+    
 def query(q,DBs,Ms,n,l=1000,minVal=0.0,maxVal=1.0):
+    '''
+    q is the query vector
+    DBs is the set of databases
+    n is the number of 
+    '''
     #parameters
     P1=.01779
     P2=.0000156
@@ -219,12 +248,11 @@ def query(q,DBs,Ms,n,l=1000,minVal=0.0,maxVal=1.0):
             if DBs[s].has_key(hashVal):
                 for c in DBs[s][hashVal]:
                     candidates.add(c)
+                    
+                    
             if len(candidates)>2*l:return candidates
             
     return candidates
-
-
-
 
 
 #<-----------Testing stuff--------------->    
@@ -268,8 +296,8 @@ def testCollisionPr(n ,d=24):
     pylab.plot(ranges,p) 
 
 
-def testCollisionsE8(n,d=24):
-    M = eye(24,24)
+def testCollisionsE8(n,d=8):
+    M = pylab.eye(8,8)
 
     S = [0.0]*n
     C = [0]*n
@@ -292,7 +320,7 @@ def testCollisionsE8(n,d=24):
         else:bucketsDis[k] = bucketsDis[k]+1
     print bucketsDis
     print ranges
-    pylab.plot(ranges,[float(bucketsCol[i])/(float(bucketsDis[i]+.000000000001))  for i in range(len(ranges))]) 
+    pylab.plot(ranges,[float(bucketsCol[i])/(float(bucketsDis[i]+.000000000001))  for i in range(len(ranges))],color='purple') 
     
     
 def compareToLinearAcc(n=1000):
@@ -309,8 +337,8 @@ def compareToLinearAcc(n=1000):
     for i in xrange(testLen):
         q = randint(0,n-1)
         candidate = randVectors[q]
-        realNN = linearSearchNN(randQuery,randVectors,d)
-        approxNNs = query(randQuery,DBs,Ms,n)
+        realNN = linearSearchNN(candidate,randVectors,d)
+        approxNNs = query(candidate,DBs,Ms,n)
         for approxNN in approxNNs:
             if realNN==approxNN:   
                 print len(approxNNs)
@@ -324,8 +352,8 @@ def compareToLinearAcc(n=1000):
 
 if __name__ == '__main__':
     pass
-    #testCollisionsE8(400000)
-    testCollisionPr(8000000)
+    #testCollisionsE8(200000)
+    testCollisionPr(  1600000)
     pylab.show()
 
     
