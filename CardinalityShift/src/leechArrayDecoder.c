@@ -53,15 +53,17 @@
 #odd  pts {010,101,100,011}
 */
 
+unsigned char xCoords[] = {1,3,5,7,3,5,7,1,3,5,7,1,5,7,1,3};
+unsigned char yCoords[] = {7,7,3,3,5,5,1,1,1,1,5,5,7,7,3,3};
 
-void printVecI(int* v,int size){
-int i = 0;
+inline void printVecI(unsigned char* v,int size){
+  unsigned char i = 0;
 for(;i<size;i++)printf("%d, ",v[i]);
 printf("\n");
 }
 
-void printVecF(float* v,int size){
-int i = 0;
+inline void printVecF(float* v,int size){
+unsigned char i = 0;
 for(;i<size;i++)printf("%f, ",v[i]);
 printf("\n");
 }
@@ -73,7 +75,7 @@ inline float quicksqrt(float b)
     */
 
     float x = 1.1;
-    int i =0;
+    unsigned char i =0;
 
     for(;i<25;i++){
         x = (x+(b/x))/2.0;
@@ -106,7 +108,7 @@ static void print(unsigned long ret,int ct){
 }
 
 
-int H6CodeWords[4][4][4][3]  = {
+unsigned char H6CodeWords[4][4][4][3]  = {
     {{{0,0,0},{1,1,1},{2,2,2},{3,3,3}},
         {{1,2,3},{0,3,2},{3,0,1},{2,1,0}},
         {{2,3,1},{3,2,0},{0,1,3},{1,0,2}},
@@ -140,7 +142,7 @@ float evenBPts[4][2] = {{3.0, 7.0},{7.0, 7.0},{7.0, 3.0},{3.0, 3.0}};
 //010 100 011 101
 float oddBPts[4][2]  = {{5.0, 5.0},{5.0, 1.0},{1.0, 1.0},{1.0, 5.0}};
 
-void QAM(float r[12][2], float evenPts[4][2],float oddPts[4][2],float dijs[12][4],float dijks[12][4],int kparities[12][4]){
+void QAM(float r[12][2], float evenPts[4][2],float oddPts[4][2],float dijs[12][4],float dijks[12][4],unsigned char kparities[12][4]){
 
 //void QAM(float *r, float *evenPts,float *oddPts,float *dijs,float *dijks,int *kparities){
     /*
@@ -160,7 +162,7 @@ void QAM(float r[12][2], float evenPts[4][2],float oddPts[4][2],float dijs[12][4
     //coset representatives for all points, not currently used
     //quadrant = [0 for k in range(12)]
 
-    int i = 0;
+    unsigned char i = 0;
     for(;i<12;i++){
 
         float dist000 = distance(r[i],evenPts[0]);
@@ -229,13 +231,13 @@ void QAM(float r[12][2], float evenPts[4][2],float oddPts[4][2],float dijs[12][4
 
 
 
-void blockConf(float dijs[12][4],float muEs[6][4],float muOs[6][4],int prefRepE[6][4][4],int prefRepO[6][4][4]){
+void blockConf(float dijs[12][4],float muEs[6][4],float muOs[6][4],unsigned char prefRepE[6][4][4],unsigned char prefRepO[6][4][4]){
     /*
         computes the Z2 block confidence of the concatonated points projections onto GF4 characters
     */
 
     //each two symbols is taken as a single character in GF4
-    int i=0;
+    unsigned char i=0;
     for(; i<6;i++){
 
         //0000 1111
@@ -405,14 +407,14 @@ void blockConf(float dijs[12][4],float muEs[6][4],float muOs[6][4],int prefRepE[
 
 }
 
-void constructHexWord(float mus[6][4],int chars[6],float charwts[6]){
+void constructHexWord(float mus[6][4],unsigned char chars[6],float charwts[6]){
     /*here we are looking for the least character in the H6 hexacdoe word
        returns the hexacode word and the wt, for using in locating the least reliable symbol
     */
-    int i = 0;
+    unsigned char i = 0;
     for(;i<6;i++)
     {
-        int leastChar = 0;
+        unsigned char leastChar = 0;
         float leastwt = mus[i][0];
 
         if(mus[i][1]<leastwt){
@@ -441,7 +443,7 @@ void constructHexWord(float mus[6][4],int chars[6],float charwts[6]){
 
 
 
-float minH6(int y[6],float charwts[6],float mus[6][4]){
+float minH6(unsigned char  y[6],float charwts[6],float mus[6][4]){
     /*
         this is the minimization over the hexacode function using the 2nd algorithm of  amrani and be'ery ieee may '96
     */
@@ -449,7 +451,7 @@ float minH6(int y[6],float charwts[6],float mus[6][4]){
 
     //locate least reliable
     float leastreliablewt = charwts[0];
-    int leastreliablechar = 0;
+    unsigned char leastreliablechar = 0;
     if(charwts[1]>leastreliablewt){
         leastreliablewt = charwts[1];
         leastreliablechar = 1;
@@ -459,16 +461,23 @@ float minH6(int y[6],float charwts[6],float mus[6][4]){
         leastreliablechar = 2;
     }
     //build candidate list
-    int candslst[8][6]={{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0}};
+    unsigned char candslst[8][6]={{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},
+                                                        {0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0}};
 
-    int i = 0;
+
+
+
+    unsigned char i = 0;
     for(;i<4;i++){
         //leastreliable = i
+
         y[leastreliablechar] = i;
+
         candslst[i][0] = y[0];
         candslst[i][1] = y[1];
         candslst[i][2] = y[2];
         candslst[i][3] = H6CodeWords[y[0]][y[1]][y[2]][0];
+
         candslst[i][4] = H6CodeWords[y[0]][y[1]][y[2]][1];
         candslst[i][5] = H6CodeWords[y[0]][y[1]][y[2]][2];
     }
@@ -502,8 +511,8 @@ float minH6(int y[6],float charwts[6],float mus[6][4]){
     float minCodeWt = 1000.0;
     //minCodeWord = [], this is chars
     i = 0;
-    int j = 0;
-    int min = 0;
+    unsigned char j = 0;
+    unsigned char  min = 0;
     for(;i<8;i++){
         float m_dist = 0.0;
         j=0;
@@ -521,13 +530,13 @@ float minH6(int y[6],float charwts[6],float mus[6][4]){
     return minCodeWt;
 }
 
-float hparity(float weight,int hexword[6],int prefReps[6][4][4],float dijs[12][4],int oddFlag,int *codeword){
+float hparity(float weight,unsigned char hexword[6],unsigned char prefReps[6][4][4],float dijs[12][4],unsigned char oddFlag,unsigned char * codeword){
     /*
         here we are resolving the h-parity. which requires that the overall least significant bit parities equal the
         bit parities of each projected GF4 block. aka column parity must equal 1st row parity
     */
-    int parity= 0;
-    int i =0;
+   unsigned char parity= 0;
+   unsigned char i =0;
 
 
 
@@ -549,9 +558,9 @@ float hparity(float weight,int hexword[6],int prefReps[6][4][4],float dijs[12][4
 
 
     float leastwt = 1000.0;
-    int least = 0;
+    unsigned char least = 0;
     float deltaX;
-    int idx1,idx2,idxComp1,idxComp2,proj;
+    unsigned char idx1,idx2,idxComp1,idxComp2,proj;
     i = 0;
     //walk along the codeword again
     for(;i<6;i++){
@@ -579,24 +588,24 @@ float hparity(float weight,int hexword[6],int prefReps[6][4][4],float dijs[12][4
     return weight;
 }
 
-float kparity(float weight,int* codeword,int Btype, int * codeParity, float dijks[12][4], float dijs[12][4],int kparities[12][4]){
+float kparity(float weight,unsigned char * codeword,unsigned char Btype, unsigned char * codeParity, float dijks[12][4], float dijs[12][4],unsigned char kparities[12][4]){
     /*
         this last parity check assures that all A or B points have even/odd parity
     */
 
-    int parity = 0;
-    int i =0;
-    int idx;
-    int temp = codeword;
+    unsigned char parity = 0;
+    unsigned char i =0;
+    unsigned char idx;
+    //int temp = codeword;
 
     float least =1000;
     float dif;
-    int argLeast = 0;
+    unsigned char argLeast = 0;
 
 
     for( ;i <12;i++)
      {
-         int n =(codeword[2*i]<<1)+codeword[2*i+1];
+        unsigned char n =(codeword[2*i]<<1)+codeword[2*i+1];
          parity= parity+ kparities[i][n];
          codeParity[i] = kparities[i][n];
 
@@ -618,18 +627,56 @@ float kparity(float weight,int* codeword,int Btype, int * codeParity, float dijk
 
 
 
+/*
 
-int* decode(float r[12][2], float *distance){
+ //test unencoded
+unsigned long ret = 0;
 
-    // #####################QAM Dijks ###################
+int m= 0 ;
+for(;m<12;m++)
+  {
+    if(r[m][0]>=6)ret = (ret<<2)+3;
+    else if(r[m][0]>=4)ret = (ret<<2)+2;
+    else if(r[m][0]>=2)ret = (ret<<2)+1;
+    else ret = ret<<2;
+
+    if(r[m][1]>=6)ret = (ret<<2)+3;
+    else if(r[m][1]>=4)ret = (ret<<2)+2;
+    else if(r[m][1]>=2)ret = (ret<<2)+1;
+    else ret = ret<<2;
+
+  }
+return ret;
+ */
+
+
+
+//unsigned char* decode(float r[12][2], float *distance){
+unsigned long decode(float r[12][2], float *distance){
+
+//
+
+// #####################QAM Dijks ###################
     float dijs[12][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
     float dijks[12][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
     //there is a set for each quarter decoder, and the A/B_ij odd/even
-    int kparities[12][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+    unsigned char kparities[12][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
     QAM(r,evenAPts,oddAPts,dijs,dijks,kparities);
 
 
-    int i;
+
+
+
+    // #####################Block Confidences ###################
+    //         0  1    w   W
+    float muEs[6][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
+    float muOs[6][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
+    unsigned char prefRepE[6][4][4];// = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+    unsigned char prefRepO[6][4][4];// = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+
+    blockConf(dijs,muEs,muOs,prefRepE,prefRepO);
+
+    unsigned char i;
     /*
     for(i=0;i<12;i++){
       printVecF(r,24);
@@ -640,47 +687,60 @@ int* decode(float r[12][2], float *distance){
 
     }*/
 
-    // #####################Block Confidences ###################
-    //         0  1    w   W
-    float muEs[6][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
-    float muOs[6][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
-    int prefRepE[6][4][4];// = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
-    int prefRepO[6][4][4];// = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
-
-    blockConf(dijs,muEs,muOs,prefRepE,prefRepO);
-
 
 
     // #####################Construct Hexacode Word ###################
-    int y[6] = {0,0,0,0,0,0};
+    unsigned char y[6] = {0,0,0,0,0,0};
+
+
+
+
     float charwts[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
     constructHexWord(muEs,y,charwts);
+
+
     // #####################Minimize over the Hexacode ###################
-    int hexword[6] = {0,0,0,0,0,0};
+    unsigned char hexword[6] = {0,0,0,0,0,0};
     float weight = minH6(y,charwts,muEs);
+
+
+
+
+
     //printf("%d,%d,%d,%d,%d,%d\n",y[0],y[1],y[2],y[3],y[4],y[5]);
     //****chars = y = hexword *****
-    int codeword[24] =  {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
-    int codeParity[12] =  {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0} ;
+    unsigned char codeword[24] =  {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
+    unsigned char codeParity[12] =  {0,0,0,0, 0,0,0,0, 0,0,0,0} ;
+
+
+
+
+
     weight = hparity(weight,y,prefRepE,dijs,0,codeword);//byref
     weight =kparity(weight,codeword,0, codeParity,dijks,dijs,kparities);
 
 
 
-;
+
 
     float leastweight = weight;
 
 
 
-    int * leastCodeword = malloc(sizeof(int) * 36);//{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0 };
+    unsigned char* leastCodeword = malloc(24*sizeof(unsigned char));
+    unsigned long retOpt = 0UL;
+    int b;
 
+    for(i=0;i<12;i++){
 
-    for(i=0;i<24;i++)
-      leastCodeword[i] = codeword[i];
-    for(i=0;i<12;i++)
-      leastCodeword[i+24] = codeParity[i];
+      //b = (codeword[i*2]<<3) + (codeword[i*2+1]<<2) + (codeParity[i]<<1) + 0;
+      //leastCodeword[i*2] = xCoords[b];
+      //leastCodeword[i*2+1] = yCoords[b];
+      //retOpt = b +(retOpt<<4);
 
+        b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
+        retOpt = b +(retOpt<<3);
+    }
 
 
 
@@ -695,11 +755,28 @@ int* decode(float r[12][2], float *distance){
     if(weight<leastweight)
     {
         leastweight = weight;
+        retOpt = 0UL;
 
-        for(i=0;i<24;i++)
-          leastCodeword[i] = codeword[i];
-        for(i=0;i<12;i++)
-          leastCodeword[i+24] = codeParity[i];
+        for(i=0;i<12;i++){
+
+          //b = (codeword[i*2]<<3) + (codeword[i*2+1]<<2) + (codeParity[i]<<1) + 0;
+          //leastCodeword[i*2] = xCoords[b];
+          //leastCodeword[i*2+1] = yCoords[b];
+          //retOpt = b +(retOpt<<4);
+
+          b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
+          retOpt = b +(retOpt<<3);
+
+
+          /*
+          leastCodeword[i*2] = codeword[i*2];
+          leastCodeword[i*2+1] = codeword[i*2+1];
+          leastCodeword[24+i] = codeParity[i];
+          */
+        }
+
+
+
 
     }
 
@@ -716,13 +793,28 @@ int* decode(float r[12][2], float *distance){
     weight =kparity(weight,codeword,1,codeParity,dijks,dijs,kparities);
 
     if(weight<leastweight){
-
+        retOpt = 0UL;
 
         leastweight = weight;
-        for(i=0;i<24;i++)
-          leastCodeword[i] = codeword[i];
-        for(i=0;i<12;i++)
-          leastCodeword[i+24] = codeParity[i];
+
+
+
+
+        for(i=0;i<12;i++){
+
+            b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
+            retOpt = b +(retOpt<<3);
+
+            //b = (codeword[i*2]<<3) + (codeword[i*2+1]<<2) + (codeParity[i]<<1) + 1;
+            //leastCodeword[i*2] = xCoords[b];
+            //leastCodeword[i*2+1] = yCoords[b];
+            //retOpt = b +(retOpt<<4);
+        }
+
+        //for(i=0;i<24;i++)
+        //  leastCodeword[i] = codeword[i];
+        //for(i=0;i<12;i++)
+        //  leastCodeword[i+24] = codeParity[i];
 
     }
 
@@ -734,19 +826,25 @@ int* decode(float r[12][2], float *distance){
 
 
     if(weight<leastweight){
-
+        retOpt = 0UL;
         leastweight = weight;
-        for(i=0;i<24;i++)
-          leastCodeword[i] = codeword[i];
+
         for(i=0;i<12;i++)
-          leastCodeword[i+24] = codeParity[i];
+        {
+          //b = (codeword[i*2]<<3) + (codeword[i*2+1]<<2) + (codeParity[i]<<1) + 1;
+            b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
+            retOpt = b +(retOpt<<3);
+          //retOpt = b +(retOpt<<4);
+          //leastCodeword[i*2] = xCoords[b];
+          //leastCodeword[i*2+1] = yCoords[b];
+        }
 
     }
 
 
     *distance = leastweight;
-
-    return leastCodeword;
+    return retOpt;
+    //return leastCodeword;
 
 
 }
@@ -772,7 +870,7 @@ void testRatios(int tests , float bias, int * counts, int * totals, float * buck
   int i,j;
   float r[12][2];
   float q[12][2];
-      for (i=0;i<tests;i++)
+      for (i=0;i<tests;)
         {
 
           float dist;
@@ -794,7 +892,20 @@ void testRatios(int tests , float bias, int * counts, int * totals, float * buck
 
           totals[b]++;
 
-          if (decode(r,&dist)==decode(q,&dist))counts[b]++;
+          unsigned char * ret1 = decode(r,&dist);
+
+          unsigned char * ret2 = decode(q,&dist);
+
+          if( testDist(r,(float*)ret1)<16.0  &&  testDist(q,(float*)ret2)<16.0)
+          {
+            unsigned char tr = 1;
+            for(j=0;j<24 && tr;j++)
+                if (ret1[j]!=ret2[j])tr = 0;
+            counts[b]+=tr;
+
+            i++;
+          }
+
 
       }
 
@@ -804,11 +915,85 @@ void testRatios(int tests , float bias, int * counts, int * totals, float * buck
 
 
 
+// The ELFhash function
+unsigned long ELFhash(char* key, long M) {
+
+  unsigned long g,h = 0;
+  while(*key) {
+    h = (h << 4) + *key++;
+    g = h & 0xF0000000L;
+    if (g) h ^= g >> 24;
+    h &= ~g;
+  }
+  return h % M;
+}
+
+
+
+
+
+
+void countNZ()
+{
+
+  unsigned int RAND_MAX = 2147483647;
+
+   int j,k;
+   long i,total=0;
+
+   unsigned char* allhashes = malloc(16777216*32);
+   printf("OK\n");
+
+   //zero it out
+   for(i=0;i <16777216*32;i++ )allhashes[i]=0;
+   printf("OK\n");
+
+   float r[12][2];
+   float dist;
+   unsigned long ret1;
+
+    for (i=0;i<16777216*16;i++)
+    {
+
+
+           for(j=0;j<12;j++){
+               r[j][0]=8*((float)rand())/RAND_MAX;
+               r[j][1]=8*((float)rand())/RAND_MAX;
+           }
+
+            ret1 = decode(r,&dist);
+
+            ret1 = ELFhash(&ret1, 16777216*32);
+
+           if(allhashes[ret1]  ==0)total++;
+           allhashes[ret1]++;
+           if(i %100000==0)
+           {
+
+               printf("%d:%d\n", i,total);
+
+           }
+
+
+       }
+
+
+
+}
+
+
 
 
 
 int main(int argc, char* argv[])
 {
+
+
+
+  srand((unsigned int)12412471);
+
+  countNZ();
+  /*
   int i,j,p;
     //some more samples
     //
@@ -833,11 +1018,11 @@ int main(int argc, char* argv[])
                     //  {7.0, 5.0}, {7.0, 5.0}, {7.0, 1.0}, {7.0, 1.0}};
 
     //print(decode(r1,&dist),9);printf("%f\n",dist);
-    printVecI(decode(r1,&dist),36);
+    printVecI(decode(r1,&dist),24);
     long ret = 0;
 
-    for(i = 0;i<36;i++)ret = decode(r1,&dist)[i] +(ret <<1) ;
-    print(ret,9);
+    //for(i = 0;i<36;i++)ret = decode(r1,&dist)[i] +(ret <<1) ;
+    //print(ret,9);
 
 
     //print(decode(r1,&dist),9);
@@ -852,12 +1037,12 @@ int main(int argc, char* argv[])
 
 
     //print(decode(r1,&dist),9);printf("%f\n",dist);
-    printVecI(decode(r1,&dist),36);
+    printVecI(decode(r1,&dist),24);
 
-    ret = 0;
+    //ret = 0;
 
-    for(i = 0;i<36;i++)ret = decode(r1,&dist)[i] +(ret <<1) ;
-    print(ret,9);
+    //for(i = 0;i<36;i++)ret = decode(r1,&dist)[i] +(ret <<1) ;
+    //print(ret,9);
 
     printf("\n");
     float r2[12][2] =    {{7.0,3.0},{3.0,3.0},{7.0,7.0},{3.0,3.0},
@@ -868,10 +1053,10 @@ int main(int argc, char* argv[])
                     //  {7.0, 1.0}, {5.0, 3.0}, {7.0, 5.0}, {5.0, 3.0}};
 
     //print(decode(r2,&dist),9);printf("%f\n",dist);
-    printVecI(decode(r2,&dist),36);
+    printVecI(decode(r2,&dist),24);
     ret = 0;
-    for(i = 0;i<36;i++)ret = (ret <<1) +decode(r2,&dist)[i];
-    print(ret,9);
+    //for(i = 0;i<36;i++)ret = (ret <<1) +decode(r2,&dist)[i];
+    //print(ret,9);
         //add some noise
 
         r2[0][1]=r2[0][1]-1.5;
@@ -882,10 +1067,10 @@ int main(int argc, char* argv[])
         r2[8][0]=r2[8][0]-1.1;
 
       //  print(decode(r2,&dist),9);printf("%f\n",dist);
-        printVecI(decode(r2,&dist),36);
+        printVecI(decode(r2,&dist),24);
         ret = 0;
-        for(i = 0;i<36;i++)ret = (ret <<1) +decode(r2,&dist)[i];
-        print(ret,9);
+        //for(i = 0;i<36;i++)ret = (ret <<1) +decode(r2,&dist)[i];
+        //print(ret,9);
         printf("\n");
 
 
@@ -895,7 +1080,7 @@ int main(int argc, char* argv[])
                     {3.0, 7.0}, {3.0, 7.0}, {1.0, 5.0}, {5.0, 5.0}};
 
     //print(decode(r3,&dist),9);printf("%f\n",dist);
-    printVecI(decode(r3,&dist),36);
+    printVecI(decode(r3,&dist),24);
         //add some noise
         r3[0][1]=r3[0][1]-2.5;
         r3[0][0]=0.0;
@@ -905,9 +1090,10 @@ int main(int argc, char* argv[])
         r3[11][1]=r3[11][1]-1.1;
         //decode(r3,&dist);
         //print(decode(r3,&dist),9);printf("%f\n",dist);
-        printVecI(decode(r3,&dist),36);
-
+        printVecI(decode(r3,&dist),24);
         printf("\n");
+
+
     float r4[12][2] ={{1.0,1.0},{3.0,7.0},{7.0,3.0},{5.0,5.0},
                       {7.0,7.0},{5.0,5.0},{1.0,5.0},{3.0,7.0},
                       {1.0,1.0},{7.0,7.0},{7.0,7.0},{1.0,1.0}};
@@ -916,7 +1102,7 @@ int main(int argc, char* argv[])
                     //{1.0, 1.0}, {7.0, 3.0}, {1.0, 1.0}, {3.0, 7.0}};
 
         //print(decode(r4,&dist),9);printf("%f\n",dist);
-        printVecI(decode(r4,&dist),36);
+        printVecI(decode(r4,&dist),24);
         //add some noise
         r4[0][0]=r4[0][0]-1.3;
         r4[1][1]=r4[1][1]+.4;
@@ -929,26 +1115,26 @@ int main(int argc, char* argv[])
 
 
         //print(decode(r4,&dist),9);printf("%f\n",dist);
-        printVecI(decode(r4,&dist),36);
+        printVecI(decode(r4,&dist),24);
 
 
 
         //3.9 / 30
         p=30;//this needs a define macro
         float k = 3.9/((float)p);
-        float buckets[30] = {0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        float buckets[30] = {0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0 };
         for(i=0;i<p;i++)buckets[i] = ((float)i)*k;
 
 
-        int counts[30]= {0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,0 };
-        int totals[30]= {0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,0 };
-        srand((unsigned int)12412471);
+        int counts[30]= {0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0 };
+        int totals[30]= {0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0 };
 
 
 
 
-        for(i=80;i<100;i++)
-            testRatios(100000 , i*.01 , & counts, & totals,  buckets);
+
+        for(i=1;i<100;i++)
+            testRatios(1000 , i*.01 , & counts, & totals,  buckets);
 
 
             for (i=0;i<p;i++)printf("%f,",buckets[i]);
@@ -957,8 +1143,8 @@ int main(int argc, char* argv[])
             printf("\n");
             for (i=0;i<p;i++)printf("%d,",totals[i]);
             printf("\n");
-
-
+  */
+  return 0;
 }
 
 
