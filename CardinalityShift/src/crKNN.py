@@ -34,15 +34,17 @@ outputs results of searches, by finding the k=20 nearest neighbors
 
 '''
 # leech library stuff
-from ctypes import *
+
 from math import log,sqrt
 from numpy import array,dot
 import os
 from random import gauss,random,randint
 
+from ctypes import *
 leechdec = cdll.LoadLibrary(os.getcwd()+'/leechDecoder.so')
 leechdec.decode.argtypes= [POINTER(c_float),POINTER(c_float)]
-leechdec.decode.restype = c_ulonglong
+#leechdec.decode.restype = c_ulonglong
+leechdec.decode.restype = POINTER(c_char)
 
 floatArray =c_float*24
 
@@ -181,8 +183,8 @@ def buildDB(data,minVal=0.0,maxVal=1.0):
     P1=.01779
     P2=.0000156
     rho = log(P1)/log(P2)
-    k =  int((log(n)/log( 1/P2)+.5))# length of concatenations, increases specificity
-    sim = int(log(n)+.5)# number of probes, increases probability of intersection
+    k =  int((log(n)/log( 1./P2)+.5))# length of concatenations, increases specificity
+    sim = int(n**rho)# number of probes, increases probability of intersection
     
     M = generateRandomProj(k,sim,d)
     
@@ -266,7 +268,7 @@ def testCollisionPr(n ,d=24):
     i=0
     while i <n:
 
-        p = [(random()*2.0)-1.0 for j in xrange(d)]
+        p = [random() for j in xrange(d)]
         q = [p[j] + (gauss(0.0,1.0)/(d**.5)) for j in xrange(d)]
         S[i]=distance(p,q,d)
         C[i]= decode(p)[0]==decode(q)[0]  
