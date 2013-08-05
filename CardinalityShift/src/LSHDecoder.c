@@ -2,7 +2,7 @@
 // VV not working VV
 //#include "MurmurHash3.cpp"
 //^^                   ^^
-#define  RAND_MAX 2157483147
+#define  RAND_MAX 2147483647
 
 
 typedef struct quantizer_t {

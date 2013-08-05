@@ -679,6 +679,7 @@ void printRandomClusters(){
 
 int main(int argc, char* argv[])
 {
+  srand((unsigned int)2141331);
   //printRandomClusters();
   big_bucket_Search(10, 1000,24);
   //testRatios(2000,20,100);
