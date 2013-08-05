@@ -67,8 +67,8 @@ def pr(n,m): return sum(eye(m) - dot(random.randn(m,n),random.randn(n,m))/float(
 
 
 avgs = []
-for i in range(100):
-    avgs.append(sum([abs(pr(10000,i))/100 for j in range(100) ]))
+for i in range(50):
+    avgs.append(sum([abs(pr(1000,i))/100 for j in range(100) ]))
 
 #(s*orth(R)'+a)*orth(R) = s+(a*orth(R))
 def check(a,s,P):
@@ -88,7 +88,7 @@ def generatePts(n,l):
 def randp(m,n,fnc, params):
     return array([[ fnc(params) for j in xrange(m)] for i in xrange(n)])
 
-n=50
+n=20
 d = 3
 
 import pylab
