@@ -577,7 +577,7 @@ void big_bucket_Search(int numTests, int part, int dim,int cutoff)
   //Quantizer * q= initializeQuantizer(decodeQAM16,2);
   //initLSH(q);
 
-  int hashMod = 10000;
+  int hashMod = 50000;
   float *r = malloc(sizeof(float)*dim);
 
   int clu = 7;
@@ -651,44 +651,37 @@ void big_bucket_Search(int numTests, int part, int dim,int cutoff)
 
       for(k=0;k<cutoff;k++)
       {
-          //checks for biggest buckets
-          if(  sizeofCandidate >  buckets[centroidIdx[k]] ){
-            //then the kth bucket can be replaced
-            //but we need to also keep looking if
-            //something is even less
-            sizeofCandidate = buckets[centroidIdx[k]];
-            argleast = k;//this is getting replaced
+
+          //find overlaps in the list k
+          if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<.15){
+              //buckets[centroidIdx[argleast]]+= buckets[i];//this needs to be weighted on the two scenarios
+              buckets[i]=0;
+              k=cutoff;
+          }else{
+
+            //checks for biggest buckets
+            if(  sizeofCandidate >  buckets[centroidIdx[k]] ){
+              //then the kth bucket can be replaced
+              //but we need to also keep looking if
+              //something is even less
+              sizeofCandidate = buckets[centroidIdx[k]];
+              argleast = k;//this is getting replaced
+            }
           }
+
+
       }
-
-
-
-
       //after the least is found it should be in argleast
-      if( buckets[i] >buckets[centroidIdx[argleast]] ){
-          /*
-          char booltest = 0;
-          for(k=0;k<cutoff;k++)
-          {
-              //can probably make this more efficient, but im sleepy so for now lets just loop
-              //again and check for overlaps here
-              if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<1.2){
-                  booltest = 1;
-              }
-          }
+      if( buckets[i] >buckets[centroidIdx[argleast]] )centroidIdx[argleast] = i;
 
-          if(booltest == 0)*/centroidIdx[argleast] = i;
-
-      }
 
 
   }
 
   for(k=0;k<cutoff;k++)
     {
-      printf("%i:%i: ",centroidIdx[k],buckets[centroidIdx[k]]);
+      printf("%i:%i:\n ",centroidIdx[k],buckets[centroidIdx[k]]);
       printVecF(&bucketsAvgs[dim*centroidIdx[k]],dim);
-      printf("\n ");
     }
   printf("\n");
 
@@ -752,7 +745,7 @@ int main(int argc, char* argv[])
   srand((unsigned int)2141331);
   //printRandomClusters();
   //                              trials, pts in a cluster, dimensions, bucket cutosff
-  big_bucket_Search(20, 1000,100,30);
+  big_bucket_Search(20, 1000,24,8);
   //testRatios(2000,20,100);
   //leechTests();
   //testHASH(10000*MULTI);
