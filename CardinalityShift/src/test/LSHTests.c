@@ -570,16 +570,17 @@ void testRatios(int tests, int l, int dim){
  * max number of tests, l is the target bucket size before emitting to the parallel system
  * dim is the vector dimensionality
  */
-void big_bucket_Search(int numTests, int part, int dim)
+void big_bucket_Search(int numTests, int part, int dim,int cutoff)
 {
   Quantizer * q= initializeQuantizer(decodeLeech, 24);
   initLSH(q);
   //Quantizer * q= initializeQuantizer(decodeQAM16,2);
   //initLSH(q);
 
+  int hashMod = 10000;
   float *r = malloc(sizeof(float)*dim);
 
-  int clu = 5;
+  int clu = 7;
   int d = 24;//q.dimensionality;
 
 
@@ -591,14 +592,22 @@ void big_bucket_Search(int numTests, int part, int dim)
   for(i=0;i<clu;i++)
   {
       printVecF(&clusterCenters[i*dim],dim);
+      printf("\n");
   }
 
   printf("--------------------------------------------------------\n");
 
 
-  int* buckets = malloc(sizeof(int)*10000);
-  float* bucketsAvgs = malloc(sizeof(float)*10000*dim);
+  //size of the buckets
+  int* buckets = malloc(sizeof(int)*hashMod);
 
+  //bucket centroid
+  float* bucketsAvgs = malloc(sizeof(float)*hashMod*dim);
+
+  //sum of decoding distances
+  float* distances = malloc(sizeof(float)*hashMod);
+
+  //pass by reference
   float distance;
 
 
@@ -608,10 +617,11 @@ void big_bucket_Search(int numTests, int part, int dim)
       float* M = GenRandomN(d,dim);
       for(i=0;i<clu*part;i++)
       {
-          long hash = lshHash(&ret[i*dim],dim, 1, 10000,M, &distance);
+          long hash = lshHash(&ret[i*dim],dim, 1, hashMod,M, &distance);
           //printf("%i:%c\n",hash,(char)(((float)i)/((float)l))+64);
           //accumulate hits to this bucket
           buckets[hash]++;
+          distances[hash]+=distance;
           //compute a moving average for current bucket
           //m_{i+1} = (m_{i}+v)/(n+1)
           for(k=0;k<dim;k++)
@@ -623,13 +633,73 @@ void big_bucket_Search(int numTests, int part, int dim)
       free(M);
   }
 
-  for(i=0;i<10000;i++)if(buckets[i]>700){
-      //printf("%i:%i\n",i,buckets[i]);
-      printVecF(&bucketsAvgs[i*dim],dim);
+
+
+  int *centroidIdx = malloc(sizeof(int)*cutoff);
+
+  //initialize the top cutoff buckets
+  for(i=0;i<cutoff;i++)centroidIdx[i] = buckets[i];
+
+  //find the top k
+  for(i=cutoff;i<hashMod;i++)
+  {
+      int argleast = 0;
+      int sizeofCandidate = buckets[i];
+
+
+
+
+      for(k=0;k<cutoff;k++)
+      {
+          //checks for biggest buckets
+          if(  sizeofCandidate >  buckets[centroidIdx[k]] ){
+            //then the kth bucket can be replaced
+            //but we need to also keep looking if
+            //something is even less
+            sizeofCandidate = buckets[centroidIdx[k]];
+            argleast = k;//this is getting replaced
+          }
+      }
+
+
+
+
+      //after the least is found it should be in argleast
+      if( buckets[i] >buckets[centroidIdx[argleast]] ){
+          /*
+          char booltest = 0;
+          for(k=0;k<cutoff;k++)
+          {
+              //can probably make this more efficient, but im sleepy so for now lets just loop
+              //again and check for overlaps here
+              if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<1.2){
+                  booltest = 1;
+              }
+          }
+
+          if(booltest == 0)*/centroidIdx[argleast] = i;
+
+      }
+
+
   }
 
-  free(buckets);
+  for(k=0;k<cutoff;k++)
+    {
+      printf("%i:%i: ",centroidIdx[k],buckets[centroidIdx[k]]);
+      printVecF(&bucketsAvgs[dim*centroidIdx[k]],dim);
+      printf("\n ");
+    }
+  printf("\n");
 
+
+
+
+  float * centroids = malloc(sizeof(float)*dim*k);
+
+
+  free(buckets);
+  free(distances);
   free(r);
   free(clusterCenters);
   free(ret);
@@ -641,7 +711,7 @@ void printRandomClusters(){
 
   int i;
   int part= 10;
-  int clu = 5;
+  int clu = 8;
   int d = 3;
 
 
@@ -681,7 +751,8 @@ int main(int argc, char* argv[])
 {
   srand((unsigned int)2141331);
   //printRandomClusters();
-  big_bucket_Search(10, 1000,24);
+  //                              trials, pts in a cluster, dimensions, bucket cutosff
+  big_bucket_Search(20, 1000,100,30);
   //testRatios(2000,20,100);
   //leechTests();
   //testHASH(10000*MULTI);
