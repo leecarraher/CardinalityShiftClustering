@@ -1,6 +1,4 @@
 
-
-
 /*
  * Generate a 'good enough' gaussian random variate.
  * based on central limit thm , this is used if better than
@@ -37,23 +35,6 @@ for(;i<size;i++){
     if(i<size-1)printf(",",v[i]);
 }
 printf("\n");
-}
-
-/*
- * to avoid name conflict, test distance is
- * a euclidean distance function for arbitrary
- * length @len vectors r and q. furthermore
- * unlike@distance() in the main class, it
- * takes the square root.
- */
-float testDist(float *r , float* q,int len ){
-  float dist = 0;
-  int i;
-  for (i=0;i<len;i++)
-  {
-      dist += (r[i]- q[i]) *(r[i]- q[i])  ;
-  }
-return quicksqrt(dist);
 }
 
 
