@@ -1,7 +1,4 @@
-#include "../LSHDecoder.c"
-#include "../leechArrayDecoder.c"
-#include "../e8Decoder.c"
-#include "../QAM16Decoder.c"
+#include "../RPHashCluster.c"
 #include "testUtils.c"
 
 #define NULL 0
@@ -563,141 +560,6 @@ void testRatios(int tests, int l, int dim){
   for(i=0;i<l;i++)printf("%i, ",totals[i]);  printf("\n");*/
 }
 
-/*
- * This test projects points until relatively large buckets of points begin to emerge.
- * Serving as an attempt to prove the hypothesis that these points are the approx.
- * density modes of the later discovered clusters.
- * max number of tests, l is the target bucket size before emitting to the parallel system
- * dim is the vector dimensionality
- */
-void big_bucket_Search(int numTests, int part, int dim,int cutoff)
-{
-  Quantizer * q= initializeQuantizer(decodeLeech, 24);
-  initLSH(q);
-  //Quantizer * q= initializeQuantizer(decodeQAM16,2);
-  //initLSH(q);
-
-  int hashMod = 50000;
-  float *r = malloc(sizeof(float)*dim);
-
-  int clu = 7;
-  int d = 24;//q.dimensionality;
-
-
-  float* clusterCenters=  generateRandomCenters(dim,clu) ;
-  float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
-
-  int i,k,j=0;
-
-  for(i=0;i<clu;i++)
-  {
-      printVecF(&clusterCenters[i*dim],dim);
-      printf("\n");
-  }
-
-  printf("--------------------------------------------------------\n");
-
-
-  //size of the buckets
-  int* buckets = malloc(sizeof(int)*hashMod);
-
-  //bucket centroid
-  float* bucketsAvgs = malloc(sizeof(float)*hashMod*dim);
-
-  //sum of decoding distances
-  float* distances = malloc(sizeof(float)*hashMod);
-
-  //pass by reference
-  float distance;
-
-
-
-    for(;j<numTests;j++){
-
-      float* M = GenRandomN(d,dim);
-      for(i=0;i<clu*part;i++)
-      {
-          long hash = lshHash(&ret[i*dim],dim, 1, hashMod,M, &distance);
-          //printf("%i:%c\n",hash,(char)(((float)i)/((float)l))+64);
-          //accumulate hits to this bucket
-          buckets[hash]++;
-          distances[hash]+=distance;
-          //compute a moving average for current bucket
-          //m_{i+1} = (m_{i}+v)/(n+1)
-          for(k=0;k<dim;k++)
-            bucketsAvgs[hash*dim+k]=(bucketsAvgs[hash*dim+k]*((float)buckets[hash])+ret[i*dim+k])/(((float)buckets[hash])+1.0);
-
-
-
-      }
-      free(M);
-  }
-
-
-
-  int *centroidIdx = malloc(sizeof(int)*cutoff);
-
-  //initialize the top cutoff buckets
-  for(i=0;i<cutoff;i++)centroidIdx[i] = buckets[i];
-
-  //find the top k
-  for(i=cutoff;i<hashMod;i++)
-  {
-      int argleast = 0;
-      int sizeofCandidate = buckets[i];
-
-
-
-
-      for(k=0;k<cutoff;k++)
-      {
-
-          //find overlaps in the list k
-          if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<.15){
-              //buckets[centroidIdx[argleast]]+= buckets[i];//this needs to be weighted on the two scenarios
-              buckets[i]=0;
-              k=cutoff;
-          }else{
-
-            //checks for biggest buckets
-            if(  sizeofCandidate >  buckets[centroidIdx[k]] ){
-              //then the kth bucket can be replaced
-              //but we need to also keep looking if
-              //something is even less
-              sizeofCandidate = buckets[centroidIdx[k]];
-              argleast = k;//this is getting replaced
-            }
-          }
-
-
-      }
-      //after the least is found it should be in argleast
-      if( buckets[i] >buckets[centroidIdx[argleast]] )centroidIdx[argleast] = i;
-
-
-
-  }
-
-  for(k=0;k<cutoff;k++)
-    {
-      printf("%i:%i:\n ",centroidIdx[k],buckets[centroidIdx[k]]);
-      printVecF(&bucketsAvgs[dim*centroidIdx[k]],dim);
-    }
-  printf("\n");
-
-
-
-
-  float * centroids = malloc(sizeof(float)*dim*k);
-
-
-  free(buckets);
-  free(distances);
-  free(r);
-  free(clusterCenters);
-  free(ret);
-}
-
 
 
 void printRandomClusters(){
@@ -739,13 +601,55 @@ void printRandomClusters(){
 }
 
 
+void big_bucket_Search(int numTests, int part, int dim,int cutoff)
+{
+
+  Quantizer * q= initializeQuantizer(decodeLeech, 24);
+   initLSH(q);
+   //Quantizer * q= initializeQuantizer(decodeQAM16,2);
+   //initLSH(q);
+
+   int hashMod = 50000;
+   float *r = malloc(sizeof(float)*dim);
+
+   int clu = 7;
+   int d = 24;//q.dimensionality;
+
+
+   float* clusterCenters=  generateRandomCenters(dim,clu) ;
+   float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
+   int i;
+   for(i=0;i<clu;i++)
+   {
+       printVecF(&clusterCenters[i*dim],dim);
+       printf("\n");
+   }
+
+   printf("--------------------------------------------------------\n");
+
+
+   float * centroids = rpHash(ret, clu*part, dim, q, hashMod, cutoff);
+   for(i=0;i<cutoff;i++)
+     {
+   printVecF(&centroids[i*dim],dim);
+ }
+ printf("\n");
+
+
+   free(clusterCenters);
+   free(ret);
+   free(centroids);
+
+}
+
 
 int main(int argc, char* argv[])
 {
   srand((unsigned int)2141331);
   //printRandomClusters();
-  //                              trials, pts in a cluster, dimensions, bucket cutosff
+  //trials, pts in a cluster, dimensions, bucket cutosff
   big_bucket_Search(20, 1000,24,8);
+
   //testRatios(2000,20,100);
   //leechTests();
   //testHASH(10000*MULTI);
