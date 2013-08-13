@@ -18,7 +18,7 @@ double randn() {
 inline void printVecI(unsigned char* v,int size){
   unsigned char i = 0;
   for(;i<size;i++){
-      printf("%d ",v[i]);
+      printf("%i ",v[i]);
       if(i<size-1)printf(",",v[i]);
   }
 

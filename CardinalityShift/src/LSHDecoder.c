@@ -13,6 +13,8 @@ typedef struct quantizer_t {
 Quantizer q;
 
 
+
+
 /*
  * Generate a 'good enough' gaussian random variate.
  * based on central limit thm , this is used if better than
@@ -24,6 +26,18 @@ double sampleNormal() {
   for(i = 0;i<6; i++)s+=((float)rand())/RAND_MAX;
   return s - 3.0;
 
+}
+
+inline float quicksqrt(float b)
+{
+    float x = 1.1;
+    unsigned char i =0;
+
+    for(;i<16;i++){
+        x = (x+(b/x))/2.0;
+    }
+
+    return x;
 }
 
 /*
@@ -51,18 +65,6 @@ void initLSH(Quantizer* quanti)
   q = *quanti;
 }
 
-
-inline float quicksqrt(float b)
-{
-    float x = 1.1;
-    unsigned char i =0;
-
-    for(;i<16;i++){
-        x = (x+(b/x))/2.0;
-    }
-
-    return x;
-}
 
 //TODO create two seperate projections. One is the db good N(0,1) projection
 //          the other is our fast random 1/3 projection
@@ -118,16 +120,15 @@ void project(float* v, float* r,int* M,float randn, int n,int t){
              //printf("%f\n",randn);
           //}
       }
-
       r[i] = sum;
   }
 }
 
-float* GenRandomN(int m,int n){
+float* GenRandomN(int m,int n,int size){
   float* M = malloc(m*n*sizeof(float));
   int i =0;
   for(i=0;i<m*n;i++)
-    M[i] = sampleNormal()*(1.0/quicksqrt((float)n));
+    M[i] = sampleNormal()*(1.0/quicksqrt((float)size));
 
   return M;
 
@@ -253,9 +254,7 @@ unsigned long lshHash(float *r, int len, int times, long tableLength,float* R, f
     //unsigned char rn;
     //int b=(int)((float)len/(float)6);
 
-
-
-    if(len==q.dimensionality)return fnvHash(q.decode(r,distance), tableLength);
+    //if(len==q.dimensionality)return fnvHash(q.decode(r,distance), tableLength);
 
 
      float * r1 =malloc(q.dimensionality*sizeof(float));

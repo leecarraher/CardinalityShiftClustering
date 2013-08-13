@@ -1,6 +1,6 @@
 #include "../RPHashCluster.c"
 #include "testUtils.c"
-
+#include "../IOUtils.c"
 #define NULL 0
 
 /*
@@ -76,7 +76,7 @@ void testRatios2(int tests , float bias, int * counts, int * totals, float * buc
           while(dist>buckets[b++]);
 
           totals[b]++;
-          float* M = GenRandomN(len,24);
+          float* M = GenRandomN(len,24,tests);
 
 
           unsigned long ret1 = lshHash(V, len, 1, 1671711, M,&distance);
@@ -141,7 +141,7 @@ float * projs = malloc(sizeof(float)*tests);
 
  int  *R = malloc(sizeof(int)*24*b*2);;
 
- float* M = GenRandomN(len,24);
+ float* M = GenRandomN(len,24,tests);
 
  float avgRatio=0.0;
  float randn = GenRandom(len,24,R);
@@ -429,7 +429,7 @@ void testRandProjectionIntersectPr(){
   int times = 2;
 
   unsigned long list[100];
-  float* R = GenRandomN(len,24);
+  float* R = GenRandomN(len,24,100);
 
 
   for(i=0;i<14;i++){
@@ -457,7 +457,7 @@ void testHASH(int tablesize){
 
   float* V = malloc(sizeof(float)*5000);
 
-  float *R = GenRandomN(5000,24);
+  float *R = GenRandomN(5000,24,tablesize);
 
   Quantizer * q= initializeQuantizer(decodeLeech, 24);
   initLSH(q);
@@ -500,7 +500,7 @@ void testRatios(int tests, int l, int dim){
   initLSH(q);
 
 
-  float* R = GenRandomN(dim,24);
+  float* R = GenRandomN(dim,24,tests);
 
   float bias ;
   int i,j,b,k;
@@ -572,7 +572,7 @@ void printRandomClusters(){
 
   float* clusterCenters=  generateRandomCenters(d,clu) ;
   float* ret=generateGaussianClusters(part,d,clu,clusterCenters);
-  float* M = GenRandomN(d,d);
+  float* M = GenRandomN(d,d,1);
 
 
   printVecF(M,9);
@@ -601,7 +601,7 @@ void printRandomClusters(){
 }
 
 
-void big_bucket_Search(int numTests, int part, int dim,int cutoff)
+void big_bucket_Search(int part ,int clu, int dim,int hashMod)
 {
 
   Quantizer * q= initializeQuantizer(decodeLeech, 24);
@@ -609,29 +609,26 @@ void big_bucket_Search(int numTests, int part, int dim,int cutoff)
    //Quantizer * q= initializeQuantizer(decodeQAM16,2);
    //initLSH(q);
 
-   int hashMod = 50000;
-   float *r = malloc(sizeof(float)*dim);
 
-   int clu = 7;
-   int d = 24;//q.dimensionality;
-
-
+   int nu;
    float* clusterCenters=  generateRandomCenters(dim,clu) ;
    float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
    int i;
    for(i=0;i<clu;i++)
    {
-       printVecF(&clusterCenters[i*dim],dim);
-       printf("\n");
+
+       printf("%u : ",q->decode(&clusterCenters[i*dim],&nu));
+       printVecF(&clusterCenters[i*dim],5);
    }
 
    printf("--------------------------------------------------------\n");
 
 
-   float * centroids = rpHash(ret, clu*part, dim, q, hashMod, cutoff);
-   for(i=0;i<cutoff;i++)
+   float * centroids = rpHash(ret, clu*part, dim, q, hashMod, clu);
+   for(i=0;i<clu;i++)
      {
-   printVecF(&centroids[i*dim],dim);
+       printf("%u : ",q->decode(&centroids[i*dim],&nu));
+       printVecF(&centroids[i*dim],5);
  }
  printf("\n");
 
@@ -648,7 +645,33 @@ int main(int argc, char* argv[])
   srand((unsigned int)2141331);
   //printRandomClusters();
   //trials, pts in a cluster, dimensions, bucket cutosff
-  big_bucket_Search(20, 1000,24,8);
+/*
+  int i;
+  int part= 200;
+  int clu = 5;
+  int dim = 12;
+
+
+  float* clusterCenters=  generateRandomCenters(dim,clu) ;
+    float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
+    for(i=0;i<clu;i++)
+    {
+        printf("[");printVecF(&clusterCenters[i*dim],dim);printf("],");
+    }
+    printf("--------------------------------------------------------\n");
+    for(i=0;i<clu*part;i++)
+    {
+        printf("[");
+        printVecF(&ret[i*dim],dim);
+        printf("],");
+    }
+*/
+  int hashMod = 10000;
+  int clusters = 10;
+  int partitionSize = 1000;
+  int dimensions = 100;
+
+  big_bucket_Search(partitionSize,clusters,dimensions,hashMod);
 
   //testRatios(2000,20,100);
   //leechTests();
