@@ -613,6 +613,9 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
    int nu;
    float* clusterCenters=  generateRandomCenters(dim,clu) ;
    float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
+
+   shuffle(ret, dim,clu*part);
+
    int i;
    for(i=0;i<clu;i++)
    {
@@ -628,6 +631,7 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
    for(i=0;i<clu;i++)
      {
        printf("%u : ",q->decode(&centroids[i*dim],&nu));
+       printf("%i : ",NN(&centroids[i*dim],clusterCenters,dim,clu));
        printVecF(&centroids[i*dim],5);
  }
  printf("\n");
@@ -642,7 +646,7 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
 
 int main(int argc, char* argv[])
 {
-  srand((unsigned int)2141331);
+  srand((unsigned int)1534211);//time(NULL));
   //printRandomClusters();
   //trials, pts in a cluster, dimensions, bucket cutosff
 /*
@@ -667,9 +671,9 @@ int main(int argc, char* argv[])
     }
 */
   int hashMod = 10000;
-  int clusters = 10;
-  int partitionSize = 1000;
-  int dimensions = 100;
+  int clusters = 5;
+  int partitionSize = 2000;
+  int dimensions = 1000;
 
   big_bucket_Search(partitionSize,clusters,dimensions,hashMod);
 

@@ -128,7 +128,8 @@ float* GenRandomN(int m,int n,int size){
   float* M = malloc(m*n*sizeof(float));
   int i =0;
   for(i=0;i<m*n;i++)
-    M[i] = sampleNormal()*(1.0/quicksqrt((float)size));
+    M[i] = sampleNormal()*(1.0/quicksqrt((float)n));
+  //size throws things way to far from the lattice^^^interval, n seems better
 
   return M;
 
@@ -258,12 +259,29 @@ unsigned long lshHash(float *r, int len, int times, long tableLength,float* R, f
 
 
      float * r1 =malloc(q.dimensionality*sizeof(float));
-     float randn = 1.0/quicksqrt((float)len);
+     //float randn = 1.0/quicksqrt((float)len);
      int k=0;
      unsigned long ret = 0L;
 
      do{
            projectN(r, r1,R, len,q.dimensionality);
+
+
+           /*
+           //sometimes the RP throws stuff out of the lattice
+           //check min/max are near the interval [-1,1]
+           int d = 1;
+           float sump = r1[0];
+           float summ = r1[0];
+           for(;d<len;d++){
+               if(summ>r1[d])summ =r1[d] ;
+               if(sump<r1[d])sump =r1[d] ;
+           }
+           printf("%f,%f,",summ,sump);
+           //printVecF(r1,24);
+          */
+
+
            ret ^=  q.decode(r1,&distance);
          k++;
      }while(k<times);

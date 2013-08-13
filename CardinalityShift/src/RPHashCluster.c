@@ -100,7 +100,7 @@ float* rpHash2(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, in
       {
 
           //find overlaps in the list k
-          if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<.15){
+          if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<2.0){
               //buckets[centroidIdx[argleast]]+= buckets[i];//this needs to be weighted on the two scenarios
               buckets[i]=0;
               k=cutoff;
@@ -152,16 +152,11 @@ float* rpHash2(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, in
 float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int cutoff)
 {
   int d = q->dimensionality;
-
-  int totals = 0;
   int i,k,j=0;
 
   int numProbes = 0;
-  //while((1<<numProbes++) < numPoints  );// poor mans log(numPoints)
-
-
-  while(numProbes*numProbes<numPoints)numProbes++;
-printf("%i\n",numProbes);
+  while((1<<numProbes++) < numPoints  );// poor mans log(numPoints)
+  //while(numProbes*numProbes<numPoints)numProbes++;
 
   //size of the buckets
   int* buckets = malloc(sizeof(int)*hashMod);
@@ -188,52 +183,42 @@ printf("%i\n",numProbes);
     float* M = GenRandomN(d,dim,numPoints);
     for(i=0;i<numPoints;i++)
     {
-
-
-
         int hash = (int) lshHash(&ret[i*dim],dim, 1, hashMod,M, &distance);
-        if(i==912)printf("%i, ",hash);
+
         //accumulate hits to this bucket
         buckets[hash]++;
         distances[hash]+=distance;
 
         //compute a moving average for current bucket
         //m_{i+1} = (m_{i}+v)/(n+1)
-
         for(k=0;k<dim;k++)
-        {
-
           bucketsAvgs[hash*dim+k]=(bucketsAvgs[hash*dim+k]*((float)buckets[hash])+ret[i*dim+k])/(((float)buckets[hash])+1.0);
-        }
 
     }
 
     free(M);
   }
-  printf("\n");
+
 
   int *centroidIdx = malloc(sizeof(int)*cutoff);
 
   //initialize the top cutoff buckets
-  for(i=0;i<cutoff;i++){
+  for(i=0;i<cutoff;i++)
       centroidIdx[i] = i;
-      totals+=buckets[i];
-  }
 
   //find the top k
   for(i=cutoff;i<hashMod;i++)
   {
     int argleast = 0;
     int sizeofCandidate = buckets[i];
-    totals+=buckets[i];
 
     for(k=0;k<cutoff;k++)
     {
         //find overlaps in the list k
         //can compute as max distance to cluster's average distance                    vvvvv though it may still be gaussian bound apriori, simulate to check.
-        if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<1.0){
+        if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<2.0){
             //buckets[centroidIdx[argleast]]+= buckets[i];//this needs to be weighted on the two scenarios
-            buckets[i]=0;
+            //buckets[i]=0;
             k=cutoff;
         }else{
           //checks for biggest buckets
@@ -248,9 +233,6 @@ printf("%i\n",numProbes);
             //this is the vetor that is getting replaced
             argleast = k;
           }
-
-
-
         }
       }
 
@@ -265,10 +247,9 @@ printf("%i\n",numProbes);
   {
     for(j = 0;j<dim;j++)centroids[k*dim+j]=bucketsAvgs[dim*centroidIdx[k] + j];
 
-    printf("%i\n",centroidIdx[k]);
+    printf("%i:%i\n",centroidIdx[k],buckets[centroidIdx[k]]);
   }
 
-  printf("%i\n",totals);
   free(buckets);
   free(distances);
   free(centroidIdx);
