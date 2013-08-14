@@ -161,7 +161,9 @@ int listSearchAndAdd(unsigned long query, unsigned long* list,int len)
 
 
 
-
+/*
+ * Return the index of the nearest neighbor to vector v
+ */
 int NN(float* v, float*M,int dim,int len)
 {
 
@@ -201,26 +203,7 @@ float * generateRandomCenters(int d,int clu)
 
   return clusterCenters;
 }
-/*
-void foo (int d,int clu,char* clusterCenters){
 
-    clusterCenters=malloc(sizeof(float)*d*clu);
-    int i;
-    for (i=0;i<clu;i++){
-        genRandomVector(d,1.0,&clusterCenters[i*d]);
-    }
-
-
-
-
-
-    float* g = NULL;
-    printf("%x\n",&g);
-    foo(d,clu,&g);
-    //printf("%x\n",&g);
-    //printf("%x\n",&ret);
-    printVecI(&g[0],d);
-}*/
 
 
 /*
@@ -252,17 +235,3 @@ float* generateGaussianClusters(int part,int d,int clu,float* clusterCenters){//
     return ret;
 }
 
-
-/*
-    part= 3
-    clu = 5
-    d = 8
-    ret,cluCntrs = getDataPoints(part,d,clu)
-
-    print "x y z label"
-    for i in range(clu):
-        for j in range(part):
-            for k in xrange(d):
-                print ret[i*part+j][k],
-            print
-*/
