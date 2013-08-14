@@ -64,17 +64,41 @@ static void print(unsigned long ret,int ct,int grsize){
  */
 void genRandomVector(int len,float sparesness,float* r)
 {
-
   while(len>0){
       if(((float)rand())/((float)RAND_MAX)< sparesness)
           r[len-1]=2.0*((float)rand())/RAND_MAX-1.0;
       else r[len-1]=0.0;
-
       len--;
+  }
+}
+
+
+
+
+/*
+ * Lets prove we are not accidentally finding clusters.
+ */
+void shuffle(float* M,int dim,int len)
+{
+  int j,i = 0;
+  for(;i<len;i++)
+  {
+      int r = rand()/RAND_MAX;
+      for(j = 0;j<dim;j++)
+      {
+          float temp = M[r*dim+j];
+          M[r*dim+j] = M[i*dim+j];
+          M[i*dim+j] = temp;
+
+         // xor swap
+        /*
+          M[r*dim+j] ^= M[i*dim+j] ;
+          M[i*dim+j] ^= M[r*dim+j];
+          M[r*dim+j] ^= M[i*dim+j] ;
+          */
+      }
 
   }
-
-
 
 }
 
@@ -137,6 +161,33 @@ int listSearchAndAdd(unsigned long query, unsigned long* list,int len)
 
 
 
+
+int NN(float* v, float*M,int dim,int len)
+{
+
+  int i,j = 0;
+  float dist = 0.0f;
+  int argmin = 0;
+  float min = 10000.0f;
+  float* q;
+  for(;j<len;j++)
+    {
+      dist =0.0f;
+      q = &M[j*dim];
+      for (i=0;i<dim;i++)
+      {
+          dist += (v[i]- q[i]) *(v[i]- q[i])  ;
+      }
+      if(dist<min){
+          min = dist;
+          argmin = j;
+      }
+
+  }
+  return argmin;
+}
+
+
 /*
  * generate random centers
  */
@@ -182,7 +233,8 @@ float* generateGaussianClusters(int part,int d,int clu,float* clusterCenters){//
     int i,j,k;
 
     for (i=0;i<clu;i++){
-        float variance = .1*((float)rand())/RAND_MAX; //must be positive and near 1
+        //must be positive and near 1, around .1 , higher numbers results in data out of range ~(-1:1)
+        float variance = .1;//*((float)rand())/RAND_MAX;
         float* ct = &clusterCenters[i*d];
         //these are the partitions
         for(j = 0;j<part;j++)
