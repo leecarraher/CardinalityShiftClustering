@@ -373,7 +373,7 @@ void leechTests(){
 }
 
 void e8Test(){
-      srand((unsigned int)2141331);
+      //srand((unsigned int)2141331);
       int i,j;
       float* e = malloc(sizeof(float)*8);
 
@@ -604,13 +604,14 @@ void printRandomClusters(){
 void big_bucket_Search(int part ,int clu, int dim,int hashMod)
 {
 
-  Quantizer * q= initializeQuantizer(decodeLeech, 24);
+   Quantizer * q= initializeQuantizer(decodeLeech, 24);
    initLSH(q);
    //Quantizer * q= initializeQuantizer(decodeQAM16,2);
    //initLSH(q);
 
-
+   // somewhere to put stuff
    int nu;
+   // could use this to compute average distance and cluster affinity
    float* clusterCenters=  generateRandomCenters(dim,clu) ;
    float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
 
@@ -631,7 +632,8 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
    for(i=0;i<clu;i++)
      {
        printf("%u : ",q->decode(&centroids[i*dim],&nu));
-       printf("%i : ",NN(&centroids[i*dim],clusterCenters,dim,clu));
+       int nearest = NN(&centroids[i*dim],clusterCenters,dim,clu);
+       printf("%i : %.4f : ",nearest,testDist(&centroids[i*dim],&clusterCenters[nearest*dim],dim));
        printVecF(&centroids[i*dim],5);
  }
  printf("\n");
@@ -646,41 +648,14 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
 
 int main(int argc, char* argv[])
 {
-  srand((unsigned int)1534211);//time(NULL));
-  //printRandomClusters();
-  //trials, pts in a cluster, dimensions, bucket cutosff
-/*
-  int i;
-  int part= 200;
-  int clu = 5;
-  int dim = 12;
-
-
-  float* clusterCenters=  generateRandomCenters(dim,clu) ;
-    float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
-    for(i=0;i<clu;i++)
-    {
-        printf("[");printVecF(&clusterCenters[i*dim],dim);printf("],");
-    }
-    printf("--------------------------------------------------------\n");
-    for(i=0;i<clu*part;i++)
-    {
-        printf("[");
-        printVecF(&ret[i*dim],dim);
-        printf("],");
-    }
-*/
+  //srand((unsigned int)1534211);
+  srand((unsigned int)time(0));
   int hashMod = 10000;
-  int clusters = 5;
+  int clusters = 8;
   int partitionSize = 2000;
   int dimensions = 1000;
 
   big_bucket_Search(partitionSize,clusters,dimensions,hashMod);
 
-  //testRatios(2000,20,100);
-  //leechTests();
-  //testHASH(10000*MULTI);
-
   return 0;
 }
-

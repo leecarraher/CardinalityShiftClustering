@@ -233,7 +233,8 @@ float* generateGaussianClusters(int part,int d,int clu,float* clusterCenters){//
     int i,j,k;
 
     for (i=0;i<clu;i++){
-        float variance = .1*((float)rand())/RAND_MAX; //must be positive and near 1
+        //must be positive and near 1, around .1 , higher numbers results in data out of range ~(-1:1)
+        float variance = .1;//*((float)rand())/RAND_MAX;
         float* ct = &clusterCenters[i*d];
         //these are the partitions
         for(j = 0;j<part;j++)

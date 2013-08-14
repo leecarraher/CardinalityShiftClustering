@@ -61,7 +61,7 @@ static void print2(unsigned long ret,int ct,int grsize){
 
 void initLSH(Quantizer* quanti)
 {
-  srand((unsigned int)12412471);
+  //srand((unsigned int)12412471);
   q = *quanti;
 }
 
@@ -273,11 +273,11 @@ unsigned long lshHash(float *r, int len, int times, long tableLength,float* R, f
            int d = 1;
            float sump = r1[0];
            float summ = r1[0];
-           for(;d<len;d++){
+           for(;d<24;d++){
                if(summ>r1[d])summ =r1[d] ;
                if(sump<r1[d])sump =r1[d] ;
            }
-           printf("%f,%f,",summ,sump);
+           printf("%f,%f\n",summ,sump);
            //printVecF(r1,24);
           */
 
@@ -301,5 +301,4 @@ Quantizer * initializeQuantizer( long(* decode)(float*,float*),int dim)
     q->decode = decode;
     return q;
 }
-
 

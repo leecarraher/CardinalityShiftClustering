@@ -3,7 +3,7 @@
 #include "e8Decoder.c"
 #include "QAM16Decoder.c"
 
-
+#define AVG_CLUSTER
 /*
  * to avoid name conflict, test distance is
  * a euclidean distance function for arbitrary
@@ -216,9 +216,20 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
     {
         //find overlaps in the list k
         //can compute as max distance to cluster's average distance                    vvvvv though it may still be gaussian bound apriori, simulate to check.
-        if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<2.0){
-            //buckets[centroidIdx[argleast]]+= buckets[i];//this needs to be weighted on the two scenarios
-            //buckets[i]=0;
+        if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<2.0)
+          {
+            //weighted average nearby buckets
+            int s = buckets[centroidIdx[k]] + buckets[i];
+#ifdef AVG_CLUSTER
+            for(j=0;j<dim;j++)
+            {
+                bucketsAvgs[centroidIdx[k]*dim+j] = ( (buckets[centroidIdx[k]])*bucketsAvgs[centroidIdx[k]*dim+j]
+                                                                                           + (buckets[i]) * bucketsAvgs[i*dim+j]  )/((float)s);
+            }
+#endif
+            buckets[centroidIdx[k]]=s;
+            buckets[i] =0;
+
             k=cutoff;
         }else{
           //checks for biggest buckets
