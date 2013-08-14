@@ -302,4 +302,3 @@ Quantizer * initializeQuantizer( long(* decode)(float*,float*),int dim)
     return q;
 }
 
-
