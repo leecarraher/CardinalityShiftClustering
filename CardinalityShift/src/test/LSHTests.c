@@ -2,7 +2,7 @@
 #include "testUtils.c"
 #include "../IOUtils.c"
 #define NULL 0
-
+//#define AVG_CLUSTER
 /*
  * As a sanity check for lattice decoding, generate a bunch of random
  * vectors and store their hashes. At set intervals output the number of
@@ -599,7 +599,18 @@ void printRandomClusters(){
   free(ret);
 
 }
+void generate_data_file(int dim, int clu,int part){
+  // could use this to compute average distance and cluster affinity
+  float* clusterCenters=  generateRandomCenters(dim,clu) ;
+  float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
 
+
+  write("ORIGDATA.mat",clu,dim, clusterCenters);
+  shuffle(ret, dim,clu*part);
+  write("TEMPOUT.mat",clu*part,dim, ret);
+  free(clusterCenters);
+  free(ret);
+}
 
 void big_bucket_Search(int part ,int clu, int dim,int hashMod)
 {
@@ -614,8 +625,6 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
    // could use this to compute average distance and cluster affinity
    float* clusterCenters=  generateRandomCenters(dim,clu) ;
    float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
-
-   shuffle(ret, dim,clu*part);
 
    int i;
    for(i=0;i<clu;i++)
@@ -646,16 +655,89 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
 }
 
 
+void clusterFile(const char* infile , const char* clusterFile,int numClusters, int hashMod)
+{
+
+   long numVectors;
+   long dim;
+   Quantizer * q= initializeQuantizer(decodeLeech, 24);
+   initLSH(q);
+
+   // somewhere to put stuff
+   int nu,i;
+   // could use this to compute average distance and cluster affinity
+   float* ret= mat(infile,&numVectors,&dim);
+
+   float * centroids = rpHash(ret, numVectors, dim, q, hashMod, numClusters);
+
+   if(clusterFile==NULL){
+
+
+     for(i=0;i<numClusters;i++)
+       {
+         printf("%u : ",q->decode(&centroids[i*(dim)],&nu));
+         printVecF(&centroids[i*(dim)],5);
+       }
+
+
+   }else{
+
+       float* clusterCenters=mat(clusterFile,&numVectors,&dim);
+
+       for(i=0;i<numClusters;i++)
+       {
+           printf("%u : ",q->decode(&clusterCenters[i*dim],&nu));
+           printVecF(&clusterCenters[i*dim],5);
+       }
+
+       printf("--------------------------------------------------------\n");
+
+       for(i=0;i<numClusters;i++)
+         {
+           printf("%u : ",q->decode(&centroids[i*dim],&nu));
+           int nearest = NN(&centroids[i*dim],clusterCenters,dim,numVectors);
+           printf("%i : %.4f : ",nearest,testDist(&centroids[i*dim],&clusterCenters[nearest*dim],dim));
+           printVecF(&centroids[i*dim],5);
+     }
+
+       printf("\n");
+
+   }
+
+   free(ret);
+   free(centroids);
+
+}
+
+
+
+
 int main(int argc, char* argv[])
 {
   //srand((unsigned int)1534211);
   srand((unsigned int)time(0));
   int hashMod = 10000;
-  int clusters = 8;
-  int partitionSize = 2000;
-  int dimensions = 1000;
+  char* centsFile = "";
+  int clusters = 10;
+ //dont generate data just run
+  if(argc==1){
+      int partitionSize = 5000;
+      int dimensions = 1000;
+      big_bucket_Search(partitionSize,clusters,dimensions,hashMod);
+      return 0;
+  }
+  //just generate data
+  if(argc==2){
+      int dimensions = 100;
+      generate_data_file(dimensions, clusters, atoi(argv[1]));
+      return 0;
+  }
+  //cluster a file
+  if(argc==4) hashMod=atoi(argv[3]);
+  //cluster a file and compare to another file with cluster centers
+  if(argc==5) centsFile = argv[4];
 
-  big_bucket_Search(partitionSize,clusters,dimensions,hashMod);
+  clusterFile(argv[1] ,centsFile, atoi(argv[2]), hashMod);
 
   return 0;
 }

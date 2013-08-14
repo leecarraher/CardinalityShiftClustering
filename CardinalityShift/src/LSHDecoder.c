@@ -4,6 +4,8 @@
 //^^                   ^^
 #define  RAND_MAX 2147483647
 
+#include <stdlib.h>
+#include <stdio.h>
 
 typedef struct quantizer_t {
         int dimensionality;//could contain other data like entropy, nominal coding gain, density

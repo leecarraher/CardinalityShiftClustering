@@ -3,7 +3,7 @@
 #include "e8Decoder.c"
 #include "QAM16Decoder.c"
 
-#define AVG_CLUSTER
+
 /*
  * to avoid name conflict, test distance is
  * a euclidean distance function for arbitrary

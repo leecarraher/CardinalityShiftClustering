@@ -1,8 +1,7 @@
 
 #include <stdio.h>
-float* mat(const char * infile,int m,int n){
-     int length = 0;
-     float d;
+float* mat(const char * infile,long * m,long *n){
+     long length = 0;
      FILE    *fptr;
      /* Open the file */
      if ((fptr = fopen(infile,"r")) == (char)0) {
@@ -11,29 +10,29 @@ float* mat(const char * infile,int m,int n){
           exit(0);
      }
 
-     int row;
-     int col;
-     fscanf(fptr,"%i",&row);
-     fscanf(fptr,"%i",&col);
+     char* str = malloc(sizeof(char)*64);
+     fgets(str,64,fptr);
+     sscanf(str,"%i",m);
+     fgets(str,64,fptr);
+     sscanf(str,"%i",n);
 
-     //printf("%i\n",row);
-     //printf("%i\n\n\n",col);
-
-
-     float* data = (float*) malloc(sizeof(float)*row*col);
-
+     float* data = malloc(sizeof(float)*(int)(*m)*(int)(*n));
      /* Read as many points as we can */
-     while (fscanf(fptr,"%lf",&d) == 1) {
-          if(length>row*col){
+
+     while (fgets(str,64,fptr) !=NULL) {
+          if(length>((int)(*m)*(int)(*n))){
                printf("Malformed Data File\n");
+               return;
           }
-          data[length] = d;
-          length++;
+          sscanf(str,"%f",&data[length++]);
+
      }
 
      fclose(fptr);
-     m = row;
-     n = col;
+     free(str);
+     printf("read %u \n",length,m,n);
+
+     return data;
 
 }
 
