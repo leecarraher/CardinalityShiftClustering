@@ -158,6 +158,11 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
   while((1<<numProbes++) < numPoints  );// poor mans log(numPoints)
   //while(numProbes*numProbes<numPoints)numProbes++;
 
+
+  /*
+    <---------------THIS IS THE MAPPER--------------->
+   */
+
   //size of the buckets
   int* buckets = malloc(sizeof(int)*hashMod);
   for(i=0;i<hashMod;i++)
@@ -178,7 +183,9 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
   //pass by reference container
   float distance;
 
+  long l = time(NULL);
   for(;j<numProbes;j++){
+
 
     float* M = GenRandomN(d,dim,numPoints);
     for(i=0;i<numPoints;i++)
@@ -199,7 +206,7 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
     free(M);
   }
 
-
+  printf("%u\n",time(NULL)-l);
   int *centroidIdx = malloc(sizeof(int)*cutoff);
 
   //initialize the top cutoff buckets
@@ -211,12 +218,14 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
   {
     int argleast = 0;
     int sizeofCandidate = buckets[i];
-
+/*
+  <---------------THIS IS THE REDUCER--------------->
+ */
     for(k=0;k<cutoff;k++)
     {
         //find overlaps in the list k
         //can compute as max distance to cluster's average distance                    vvvvv though it may still be gaussian bound apriori, simulate to check.
-        if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<2.0)
+        if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<quicksqrt(3.0))
           {
             //weighted average nearby buckets
             int s = buckets[centroidIdx[k]] + buckets[i];
@@ -229,13 +238,11 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
 #endif
             buckets[centroidIdx[k]]=s;
             buckets[i] =0;
-
-            k=cutoff;
+            k=cutoff;//break
         }else{
           //checks for biggest buckets
-          //printf("%i:%i\n",sizeofCandidate,buckets[centroidIdx[k]] );
-          if(  sizeofCandidate >  buckets[centroidIdx[k]] ){
-
+          if(  sizeofCandidate >  buckets[centroidIdx[k]] )
+            {
             //then the kth bucket can be replaced
             //but we need to also keep looking if
             //something is even less

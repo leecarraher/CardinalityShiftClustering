@@ -2,7 +2,9 @@
 #include "testUtils.c"
 #include "../IOUtils.c"
 #define NULL 0
-//#define AVG_CLUSTER
+//off is better?
+#define AVG_CLUSTER
+
 /*
  * As a sanity check for lattice decoding, generate a bunch of random
  * vectors and store their hashes. At set intervals output the number of
@@ -636,7 +638,7 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
 
    printf("--------------------------------------------------------\n");
 
-
+   srand((unsigned int)time(0));
    float * centroids = rpHash(ret, clu*part, dim, q, hashMod, clu);
    for(i=0;i<clu;i++)
      {
@@ -696,8 +698,8 @@ void clusterFile(const char* infile , const char* clusterFile,int numClusters, i
          {
            printf("%u : ",q->decode(&centroids[i*dim],&nu));
            int nearest = NN(&centroids[i*dim],clusterCenters,dim,numVectors);
-           printf("%i : %.4f : ",nearest,testDist(&centroids[i*dim],&clusterCenters[nearest*dim],dim));
-           printVecF(&centroids[i*dim],5);
+           printf("%i : %.4f :  ",nearest,testDist(&centroids[i*dim],&clusterCenters[nearest*dim],dim));
+           printVecF(&centroids[i*dim],10);
      }
 
        printf("\n");
@@ -714,29 +716,35 @@ void clusterFile(const char* infile , const char* clusterFile,int numClusters, i
 
 int main(int argc, char* argv[])
 {
-  //srand((unsigned int)1534211);
-  srand((unsigned int)time(0));
+  srand((unsigned int)1534211);
+
   int hashMod = 10000;
-  char* centsFile = "";
-  int clusters = 10;
+  char* centsFile = NULL;
+  int clusters = 20;
  //dont generate data just run
   if(argc==1){
-      int partitionSize = 5000;
+      int partitionSize = 3000;
       int dimensions = 1000;
       big_bucket_Search(partitionSize,clusters,dimensions,hashMod);
       return 0;
   }
+  srand((unsigned int)time(0));
   //just generate data
   if(argc==2){
-      int dimensions = 100;
+      int dimensions = 1000;
       generate_data_file(dimensions, clusters, atoi(argv[1]));
       return 0;
   }
-  //cluster a file
-  if(argc==4) hashMod=atoi(argv[3]);
-  //cluster a file and compare to another file with cluster centers
-  if(argc==5) centsFile = argv[4];
 
+//implicitly > 2 ie a file on the cmd
+
+
+  //cluster a file and compare to another file with cluster centers
+  if(argc>3) centsFile = argv[3];
+
+  //cluster a file
+  if(argc>4) hashMod=atoi(argv[4]);
+  
   clusterFile(argv[1] ,centsFile, atoi(argv[2]), hashMod);
 
   return 0;
