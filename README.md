@@ -83,7 +83,7 @@ Gather: `O(1)`
 Distribute: `O(1)`  
 Average: `O(log(n)*n)`  
 Gather: `O(1)`  
-*projection dominates complexity so overall  
+* projection dominates complexity so overall  
       `O(log(n) * n*d*m)`  
 * and this parallelizes over the number of nodes well  
 
@@ -97,7 +97,7 @@ USAGE:
 
 2. Generate random data file with 20 cluster of numberOfPtsPerCluster x 1000 
 dimensional vectors
->  ./rptest numberOfPtsPerCluster
+>  ./rptest numberOfPtsPerCluster  
 outputs two files:  
 ORIGDATA.mat - the original cluster centers  
 TEMPOUT.mat  - all data vectors  
