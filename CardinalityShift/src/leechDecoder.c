@@ -62,7 +62,7 @@ printf("\n");
 
 void printVecF(float* v,int size){
 int i = 0;
-for(;i<size;i++)printf("%f, ",v[i]);
+for(;i<size;i++)printf("%.2f, ",v[i]);
 printf("\n");
 }
 
@@ -230,7 +230,7 @@ void QAM(float r[12][2], float evenPts[4][2],float oddPts[4][2],float dijs[12][4
 
 
 
-void blockConf(float dijs[12][4],float muEs[6][4],float muOs[6][4],int prefRepE[6][4],int prefRepO[6][4]){
+void blockConf(float dijs[12][4],float muEs[6][4],float muOs[6][4],unsigned char prefRepE[6][4],unsigned char prefRepO[6][4]){
     /*
         computes the Z2 block confidence of the concatonated points projections onto GF4 characters
     */
@@ -342,7 +342,7 @@ void blockConf(float dijs[12][4],float muEs[6][4],float muOs[6][4],int prefRepE[
 
 }
 
-void constructHexWord(float mus[6][4],int chars[6],float charwts[6]){
+void constructHexWord(float mus[6][4],unsigned char chars[6],float charwts[6]){
     /*here we are looking for the least character in the H6 hexacdoe word
        returns the hexacode word and the wt, for using in locating the least reliable symbol
     */
@@ -378,7 +378,7 @@ void constructHexWord(float mus[6][4],int chars[6],float charwts[6]){
 
 
 
-float minH6(int y[6],float charwts[6],float mus[6][4]){
+float minH6(unsigned char y[6],float charwts[6],float mus[6][4]){
     /*
         this is the minimization over the hexacode funtion using the 2nd algorithm of  amrani and be'ery ieee may '96
     */
@@ -458,7 +458,7 @@ float minH6(int y[6],float charwts[6],float mus[6][4]){
     return minCodeWt;
 }
 
-float hparity(float weight,int hexword[6],int prefReps[6][4],float dijs[12][4],int oddFlag,int *codeword){
+float hparity(float weight,unsigned char hexword[6],unsigned char prefReps[6][4],float dijs[12][4],unsigned char oddFlag,unsigned int *codeword){
     /*
         here we are resolving the h-parity. which requires that the overall least significant bit parities equal the
         bit parities of each projected GF4 block. aka column parity must equal 1st row parity
@@ -525,7 +525,7 @@ float hparity(float weight,int hexword[6],int prefReps[6][4],float dijs[12][4],i
     return weight;
 }
 
-float kparity(float weight,int codeword,int Btype, int * codeParity, float dijks[12][4], float dijs[12][4],int kparities[12][4]){
+float kparity(float weight,unsigned int codeword,int Btype,unsigned int * codeParity, float dijks[12][4], float dijs[12][4],int kparities[12][4]){
     /*
         this last parity check assures that all A or B points have even/odd parity
     */
@@ -626,19 +626,25 @@ float kparity(float weight,int codeword,int Btype, int * codeParity, float dijks
 
 
 
-
+#define GOLAY
 
 unsigned long decode(float *r, float *distance){
-
+  int i;
     // #####################QAM Dijks ###################
     float dijs[12][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
     float dijks[12][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
     //there is a set for each quarter decoder, and the A/B_ij odd/even
     int kparities[12][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
-    QAM(r,evenAPts,oddAPts,dijs,dijks,kparities);
+    float rr[12][2];
+    for(i=0;i<12;i++){
+        rr[i][0] = r[i*2];
+        rr[i][1] = r[i*2+1];
+
+    }
+    QAM(rr,evenAPts,oddAPts,dijs,dijks,kparities);
 
 
-    int i;
+
     for(i=0;i<12;i++){
       printVecF(r,24);
       printVecF(dijs[i],4);
@@ -652,24 +658,24 @@ unsigned long decode(float *r, float *distance){
     //         0  1    w   W
     float muEs[6][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
     float muOs[6][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
-    int prefRepE[6][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
-    int prefRepO[6][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+    unsigned char prefRepE[6][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+    unsigned char prefRepO[6][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
     
     blockConf(dijs,muEs,muOs,prefRepE,prefRepO);
     
 
 
     // #####################Construct Hexacode Word ###################
-    int y[6] = {0,0,0,0,0,0};
+    unsigned char y[6] = {0,0,0,0,0,0};
     float charwts[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
     constructHexWord(muEs,y,charwts);
     // #####################Minimize over the Hexacode ###################
-    int hexword[6] = {0,0,0,0,0,0};
+    unsigned char hexword[6] = {0,0,0,0,0,0};
     float weight = minH6(y,charwts,muEs);
     //printf("%d,%d,%d,%d,%d,%d\n",y[0],y[1],y[2],y[3],y[4],y[5]);
     //****chars = y = hexword ***** 
-    int codeword = 0;
-    int codeParity = 0;
+    unsigned int codeword = 0;
+    unsigned int codeParity = 0;
     weight = hparity(weight,y,prefRepE,dijs,0,&codeword);//byref
     weight =kparity(weight,codeword,0, &codeParity,dijks,dijs,kparities);
     
@@ -708,7 +714,7 @@ unsigned long decode(float *r, float *distance){
     }
 
     //----------------H_24 Half Lattice Decoder for B points----------------
-    QAM(r,evenBPts,oddBPts,dijs,dijks,kparities);
+    QAM(rr,evenBPts,oddBPts,dijs,dijks,kparities);
     blockConf(dijs,muEs,muOs,prefRepE,prefRepO);
     
 
