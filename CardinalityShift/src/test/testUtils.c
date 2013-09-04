@@ -12,6 +12,7 @@ double randn() {
 
 }
 
+
 /*
  *print @size values of an integer vector @v
  */
@@ -55,6 +56,59 @@ static void print(unsigned long ret,int ct,int grsize){
         }
         printf(" ");
     } printf("\n");
+}
+
+int weight(unsigned long u){
+  int ret = 0;
+  while(u>0)
+   {
+      if(u&1 == 1)ret++;
+      u = (u>>1);
+  }
+  return ret;
+}
+
+
+
+
+
+void convertToCoords(unsigned long c,unsigned char Bpoint, unsigned char* point)
+{
+ /*
+#  7 A000 B000 A110 B110
+#  5 B101 A010 B010 A101
+#  3 A111 B111 A001 B001
+#  1 B011 A100 B100 A011
+#  0   1         3       5      7
+*/
+  // since a -1 to 1 scaled 16 QAM is used the below
+  // integer scaling is not needed, but is useful for
+  // visualizing so it remains in test.
+  //    01    23   45   67     89  10 11      12 13  14 15
+  //    000  001 010  011 100 101         110      111
+  unsigned char axCoords[] = {1,5, 3,7,3,7,5,1 };
+  unsigned char ayCoords[] = {7,3,5,1,1,5,7,3};
+  unsigned char bxCoords[] = {3,7,5,1,5,1,7,3};
+  unsigned char byCoords[] = {7,3, 5,1,1,5,7,3};
+
+
+  int i = 11;
+
+
+  if(Bpoint==0){
+      for(;i>-1;i--){
+            point[i*2]= axCoords[c&7];
+            point[i*2+1]=ayCoords[c&7];
+            c = c>>3;
+      }
+  }
+
+  for(;i>-1;i--){
+        point[i*2]= bxCoords[c&7];
+        point[i*2+1]=byCoords[c&7];
+        c = c>>3;
+  }
+
 }
 
 

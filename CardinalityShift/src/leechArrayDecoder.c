@@ -82,6 +82,7 @@ inline float quicksqrt(float b)
  * sqrt(d(cp, pt.)) and sqrt(d(cp', pt.)) inequality holds for positive
  * distances(this is why we keep the squares).
  */
+//#define golay
 
 inline float distance(float cp[2],float pt[2])
 {
@@ -89,16 +90,6 @@ inline float distance(float cp[2],float pt[2])
     return s;
 
 }
-
-// since a -1 to 1 scaled 16 QAM is used the below
-// integer scaling is not needed, but is useful for
-// visualizing so it remains in test.
-//    01    23   45   67    89  10 11 12 13  14 15
-//    000  001 010 011 100  101    110     111
-unsigned char xCoords[] = {1, 3,  5,7, 3,5, 7,1, 3,5, 7,1, 5,7, 1,3};
-unsigned char yCoords[] = {7, 7,  3,3, 5,5, 1,1, 1,1, 5,5, 7,7, 3,3};
-
-
 
 
 
@@ -565,8 +556,13 @@ float hparity(float weight,unsigned char hexword[6],unsigned char prefReps[6][4]
         parity = parity + prefReps[i][hexword[i]][0];//this should be the highest order bit
     }
 
-    if((parity&1) == oddFlag)
+
+
+    /*this is needed otherwise 2x golay code are emitted*/
+
+    if((parity&1) == oddFlag){
         return weight;
+    }
 
 
     float leastwt = 1000.0;
@@ -599,8 +595,6 @@ float hparity(float weight,unsigned char hexword[6],unsigned char prefReps[6][4]
     codeword[least+2]= codeword[least+2]^1;
     codeword[least+3]= codeword[least+3]^1;
 
-
-
     return weight;
 }
 
@@ -631,13 +625,18 @@ float kparity(float weight,unsigned char * codeword,unsigned char Btype, unsigne
           }
      }
 
-
-    if(parity== Btype )
-         return weight;
+/*something here as this parity check doesnt fix anything*/
+//not sure why this doesnt at least double the set cardinality
+    if(parity== Btype ){
+        return weight;
+    }
 
     codeParity[argLeast ]=  codeParity[argLeast ] ^1;
+
     return weight+least;
 }
+
+
 
 
 
@@ -666,7 +665,7 @@ unsigned long decodeLeech(float r[12][2], float *distance){
     unsigned char* prefRepE=malloc(sizeof(unsigned char)*6*4*4) ;// = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
     unsigned char* prefRepO=malloc(sizeof(unsigned char)*6*4*4) ;// = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
 
-    blockConf(dijs,muEs,muOs,prefRepE,prefRepO);
+    blockConf(dijs,muEs,muOs,prefRepE,prefRepO); //just run through both as its faster, but could conserve array allocation
 
     unsigned char i;
 
@@ -695,6 +694,7 @@ unsigned long decodeLeech(float r[12][2], float *distance){
     unsigned char* codeword =  malloc(sizeof(unsigned char)*24);//{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
     unsigned char* codeParity =  malloc(sizeof(unsigned char)*12) ;
 
+    int winner = 0;
 
     weight = hparity(weight,y,prefRepE,dijs,0,codeword);//byref
 
@@ -716,16 +716,18 @@ unsigned long decodeLeech(float r[12][2], float *distance){
 
     for(i=0;i<12;i++){
 
-
+#ifndef golay
         b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
         retOpt = b +(retOpt<<3);
-
+        //retOpt = codeParity[i]+(retOpt<<1);//
+#endif
+#ifdef golay
         //just the codeword
-        //b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
-        //retOpt = b +(retOpt<<2);
-
+        b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
+        retOpt = b +(retOpt<<2);
+#endif
     }
-
+    *distance =0;
 
 
     //----------------A Odd Quarter Lattice Decoder----------------
@@ -741,20 +743,27 @@ unsigned long decodeLeech(float r[12][2], float *distance){
     weight =kparity(weight,codeword,0,codeParity,dijks,dijs,kparities);
 
 
+
     if(weight<leastweight)
     {
         leastweight = weight;
         retOpt = 0UL;
 
         for(i=0;i<12;i++){
+#ifndef golay
           b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
           retOpt = b +(retOpt<<3);
+          //retOpt = codeParity[i]+(retOpt<<1);
 
+#endif
           //just the codeword
-          //b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
-          //retOpt = b +(retOpt<<2);
+#ifdef golay
+          b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
+          retOpt = b +(retOpt<<2);
+#endif
         }
-
+        *distance =0;
+        winner = 1;
     }
 
     //----------------H_24 Half Lattice Decoder for B points----------------
@@ -768,7 +777,7 @@ unsigned long decodeLeech(float r[12][2], float *distance){
 
     weight = hparity(weight,y,prefRepE,dijs,0,codeword);//byref
 //    printf("BptEvens\n");
-;
+
     weight =kparity(weight,codeword,1,codeParity,dijks,dijs,kparities);
 
     if(weight<leastweight){
@@ -776,16 +785,21 @@ unsigned long decodeLeech(float r[12][2], float *distance){
 
         leastweight = weight;
         for(i=0;i<12;i++){
-
+#ifndef golay
             b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
             retOpt = b +(retOpt<<3);
+            //retOpt = codeParity[i]+(retOpt<<1);
+#endif
 
+#ifdef golay
         //just the codeword
-            //b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
-            //retOpt = b +(retOpt<<2);
+            b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
+            retOpt = b +(retOpt<<2);
+ #endif
 
         }
-
+        *distance =1;
+        winner = 2;
 
     }
 
@@ -797,26 +811,31 @@ unsigned long decodeLeech(float r[12][2], float *distance){
 
     weight =kparity(weight,codeword,1,codeParity,dijks,dijs,kparities);
 
-
     if(weight<leastweight){
         retOpt = 0UL;
         leastweight = weight;
 
         for(i=0;i<12;i++)
         {
+#ifndef golay
             b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
             retOpt = b +(retOpt<<3);
-
-
+            //retOpt = codeParity[i]+(retOpt<<1);
+#endif
+#ifdef golay
             //just the codeword
-              //b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
-              //retOpt = b +(retOpt<<2);
+              b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
+              retOpt = b +(retOpt<<2);
+#endif
+            //just the parity
+
 
         }
-
+        *distance =1;
+        winner =3;
     }
-
-    *distance += leastweight;
+    *distance = winner;
+    //*distance += leastweight;
 
     free(dijs);
     free(dijks);
@@ -831,5 +850,6 @@ unsigned long decodeLeech(float r[12][2], float *distance){
     free(codeword);
     free(codeParity);
     free(leastCodeword);
+
     return retOpt;//leastCodeword;
 }

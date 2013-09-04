@@ -156,7 +156,7 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
 
   int numProbes = 0;
   while((1<<numProbes++) < numPoints  );// poor mans log(numPoints)
-  //while(numProbes*numProbes<numPoints)numProbes++;
+  //while(numProbes*numProbes<hashMod)numProbes++;<-- Bday Paradox, way to high!
 
 
   /*
@@ -165,28 +165,19 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
 
   //size of the buckets
   int* buckets = malloc(sizeof(int)*hashMod);
-  for(i=0;i<hashMod;i++)
-  {
-      buckets[i]=0;
-  }
-
+  for(i=0;i<hashMod;i++) buckets[i]=0;
   //bucket centroid
   float* bucketsAvgs = malloc(sizeof(float)*hashMod*dim);
-  for(i=0;i<hashMod*dim;i++)
-  {
-      bucketsAvgs[i]=0.0f;
-  }
-
+  for(i=0;i<hashMod*dim;i++) bucketsAvgs[i]=0.0f;
   //sum of decoding distances
   float* distances = malloc(sizeof(float)*hashMod);
-
   //pass by reference container
   float distance;
 
+
+
   long l = time(NULL);
-  for(;j<numProbes;j++){
-
-
+  for(j=0;j<numProbes;j++){
     float* M = GenRandomN(d,dim,numPoints);
     for(i=0;i<numPoints;i++)
     {
@@ -200,9 +191,7 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
         //m_{i+1} = (m_{i}+v)/(n+1)
         for(k=0;k<dim;k++)
           bucketsAvgs[hash*dim+k]=(bucketsAvgs[hash*dim+k]*((float)buckets[hash])+ret[i*dim+k])/(((float)buckets[hash])+1.0);
-
     }
-
     free(M);
   }
 
@@ -221,8 +210,11 @@ float* rpHash(float* ret, int numPoints, int dim, Quantizer* q, int hashMod, int
 /*
   <---------------THIS IS THE REDUCER--------------->
  */
+
+
     for(k=0;k<cutoff;k++)
     {
+        //use XOR'd lattice ID as general distance measure
         //find overlaps in the list k
         //can compute as max distance to cluster's average distance                    vvvvv though it may still be gaussian bound apriori, simulate to check.
         if(testDist(&bucketsAvgs[i*dim], &bucketsAvgs[centroidIdx[k]*dim],dim)<quicksqrt(3.0))

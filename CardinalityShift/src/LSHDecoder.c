@@ -129,14 +129,12 @@ void project(float* v, float* r,int* M,float randn, int n,int t){
 float* GenRandomN(int m,int n,int size){
   float* M = malloc(m*n*sizeof(float));
   int i =0;
+  float scale = (1.0/quicksqrt((float)n));
   for(i=0;i<m*n;i++)
-    M[i] = sampleNormal()*(1.0/quicksqrt((float)n));
+    M[i] = sampleNormal()*scale;
   //size throws things way to far from the lattice^^^interval, n seems better
 
   return M;
-
-
-
 }
 
 void projectN(float* v, float* r,float* M, int n,int t){
@@ -151,7 +149,6 @@ void projectN(float* v, float* r,float* M, int n,int t){
       r[i] = sum;
   }
 }
-
 
 /*
  * from Achlioptas 01 and JL -THm
@@ -216,21 +213,32 @@ float GenRandom(int n,int m,int *M){
     return randn;
     }
 
- unsigned long fnvHash (unsigned  long key, int tablelength )
- {
+const unsigned long fnvHash (unsigned  long key, int tablelength )
+{
+      unsigned char* bytes = (unsigned char*)(&key);
+      unsigned long hash = 2166136261U;
+      hash = (16777619U * hash) ^ bytes[0];
+      hash = (16777619U * hash) ^ bytes[1];
+      hash = (16777619U * hash) ^ bytes[2];
+      hash = (16777619U * hash) ^ bytes[3];
+      hash = (16777619U * hash) ^ bytes[4];
+      hash = (16777619U * hash) ^ bytes[5];
+      hash = (16777619U * hash) ^ bytes[6];
+      hash = (16777619U * hash) ^ bytes[7];
+      return hash %tablelength;
+}
 
-   unsigned h = 2166136261;
-   int i;
+const unsigned long fnvHashStr(unsigned char* data, int len,int tablelength)
+{
+   unsigned long hash= 2166136261U;
+   int i =0;
+    for ( i=0; i < len; i++) {
+        hash = (16777619U * hash) ^ (unsigned char)(data[i]);
+    }
+    return hash%tablelength;
+}
 
-   while ( key ){
 
-     h = ( h * 16777619 ) ^ (key&0xFF);
-     key>>=8;
-
-   }
-
-   return h%tablelength;
- }
 
 
 //unsigned long ELFHash(const unsigned char *key,int tablesize)
@@ -268,7 +276,6 @@ unsigned long lshHash(float *r, int len, int times, long tableLength,float* R, f
      do{
            projectN(r, r1,R, len,q.dimensionality);
 
-
            /*
            //sometimes the RP throws stuff out of the lattice
            //check min/max are near the interval [-1,1]
@@ -282,7 +289,6 @@ unsigned long lshHash(float *r, int len, int times, long tableLength,float* R, f
            printf("%f,%f\n",summ,sump);
            //printVecF(r1,24);
           */
-
 
            ret ^=  q.decode(r1,&distance);
          k++;
