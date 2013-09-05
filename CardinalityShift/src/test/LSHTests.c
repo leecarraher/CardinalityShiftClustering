@@ -238,6 +238,31 @@ void avgDistTest(){
 
 void leechTests(){
 
+
+  float m[24] = {
+      0.25,0.75,-0.25,-0.75,//1110
+      -0.25,0.25,0.25,-0.25,//0100
+      -0.25,0.25,-0.75,-0.25,//0111
+      0.25,0.75,-0.25,0.25,//1101
+      -0.25,0.25,0.25,0.75,//0111
+      0.25,0.75,-0.25,0.25};//1101
+
+
+
+  float dist;
+  float * point = malloc(sizeof(float)*24);
+  unsigned long d = decodeLeech(m,&dist);
+  print(d,9,4);
+  convertToCoords(d, point);
+  printVecF(point,24);
+  printf("%f\n",testDist(point , m,24 ));
+  return;
+
+
+
+
+
+
       //some more samples
       //
       //{{7.0,3.0},{3.0,3.0},{7.0,7.0},{3.0,3.0},
@@ -252,7 +277,6 @@ void leechTests(){
           //{3.0,5.0},{5.0,7.0},{3.0,1.0},{5.0,3.0},
           //{1.0,3.0},{3.0,5.0},{1.0,3.0},{7.0,1.0}}
 
-      float dist;
       int i;
       float r1[12][2] ={{7.0,7.0},{1.0,5.0},{1.0,1.0},{3.0,3.0},
                           {5.0,1.0},{3.0,7.0},{3.0,7.0},{5.0,5.0},
@@ -756,7 +780,7 @@ void countUnique(){
   unsigned char * storage = malloc(sizeof(unsigned char)*(bdaycollision+1));
 
   int * weights = malloc(sizeof(int)*25);
-  unsigned char* point = malloc(sizeof(char)*24);
+  unsigned char* point = malloc(sizeof(unsigned char)*24);
   for(i=0;i<bdaycollision+1;i++)storage[i] = 0;
 
   int count = 0;
@@ -764,56 +788,40 @@ void countUnique(){
 
   int runs = (1<<22);
 
+  unsigned long d;
+
   for(i=0;i<runs;i++){
-     if(i%335544==0)printf("%i\n",i);
+             if(i%335544==0){
+                 int j = 0;
+                 count = 0 ;
+                 for(j=0;j<bdaycollision+1;j++){
+                     if(storage[j]!=0){
+                         count++;
+                         if(storage[j]>max)max= storage[j];
+                     }
+                 }
+                 printf("%i \n",count);
+                 //printf("%i\n",i);
+             }
 
 
-    genRandomVector(24,1.0,r);
-    unsigned long d = decodeLeech(r,&dist);
+            genRandomVector(24,1.0,r);
+            int j;
+            for(j=0;j<25;j++)r[j] = (r[j]+1)*4.0;
 
+                d = decodeLeech(r,&dist);
+                printf("%i, ",(int)dist);
+                convertToCoords(d, point);
+                storage[ fnvHashStr(point, 24,bdaycollision)]++;
 
-    switch((int)dist){
-    case 0: {//printf("A-type Even : ");
-                dist = 0;
+          }
 
-    }
-      break;
-    case 1:{//printf("A-type Odd  : ");
-                dist = 0;
-
-
-    }
-      break;
-    case 2:{//printf("B-type Even : ");
-                dist = 1;
-                convertToCoords(d,dist, point);
-                 //printVecI(point,24);
-                 //printf("%i\n", fnvHash(d,bdaycollision));
-                 //storage[fnvHash(d,bdaycollision)]++;
-                 storage[ fnvHashStr(point, 24,bdaycollision)]++;
-                 weights[weight(d)]++;
-    }
-      break;
-    case 3:{//printf("B-type Odd  : ");
-      dist = 1;
-
-      break;
-    }
-    default: break;
-
-    }
-
-
-  }
-
-
-
-
-  for(i=0;i<bdaycollision+1;i++){
-      if(storage[i]!=0){
-          count++;
-          if(storage[i]>max)max= storage[i];
-      }
+          count = 0 ;
+          for(i=0;i<bdaycollision+1;i++){
+              if(storage[i]!=0){
+                  count++;
+                  if(storage[i]>max)max= storage[i];
+              }
   }
   printf("%i , %i \n",count,max);
   for(i=0;i<25;i++) printf("%i,",weights[i]);
@@ -836,7 +844,6 @@ int main(int argc, char* argv[])
 
   countUnique();
 
-  return;
 
   int hashMod = 10000;
   char* centsFile = NULL;

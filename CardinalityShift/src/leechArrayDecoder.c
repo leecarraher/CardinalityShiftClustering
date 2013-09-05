@@ -84,9 +84,11 @@ inline float quicksqrt(float b)
  */
 //#define golay
 
-inline float distance(float cp[2],float pt[2])
+inline float distance(float *cp,float pt[2])
 {
+ // printf("%f,%f : %f,%f = ",cp[0],cp[1],pt[0],pt[1]);
     float s =(cp[0]-pt[0])*(cp[0]-pt[0]) + (cp[1]-pt[1])*(cp[1]-pt[1]);
+   // printf(" %f\n",s);
     return s;
 
 }
@@ -129,6 +131,37 @@ static const unsigned char H6CodeWords[4][4][4][3]  = {
     }
 };
 
+
+static const unsigned char H6CodeWordsRev[4][4][4][3]  = {
+    {
+    //#w    0       1       w      -w
+    { {0,0,0}, {3,2,1}, {1,3,2}, {2,1,3} }, //0
+    { {2,3,1}, {1,1,0}, {3,0,3}, {0,2,2} },//1
+    { {3,1,2}, {0,3,3}, {2,2,0}, {1,0,1} }, //w
+    { {1,2,3}, {2,0,2}, {0,1,1}, {3,3,0} }//-w
+    },
+    {//w    0       1       w      -w
+    { {1,1,1}, {2,3,0}, {0,2,3}, {3,0,2} },//0
+    { {3,2,0}, {0,0,1}, {2,1,2}, {1,3,3} },//1
+    { {2,0,3}, {1,2,2}, {3,3,1}, {0,1,0} },//w
+    { {0,3,2}, {3,1,3}, {1,0,0}, {2,2,1} }//-w
+    },
+    {//w    0       1       w      -w
+    { {2,2,2}, {1,0,3}, {3,1,0}, {0,3,1} },//0
+    { {0,1,3}, {3,3,2}, {1,2,1}, {2,0,0} },//1
+    { {1,3,0}, {2,1,1}, {0,0,2}, {3,2,3} },//w
+    { {3,0,1}, {0,2,0}, {2,3,3}, {1,1,2} }//-w
+    },
+    {//-w   0       1       w      -w
+    { {3,3,3}, {0,1,2}, {2,0,1}, {1,2,0} },//0
+    { {1,0,2}, {2,2,3}, {0,3,0}, {3,1,1} },//1
+    { {0,2,1}, {3,0,0}, {1,1,3}, {2,3,2} },//w
+    { {2,1,0}, {1,3,1}, {3,2,2}, {0,0,3} }//-w
+    }};
+
+
+
+/*
 // shaping -.75, -.25,+.25,+.75
 //the unit scaled points of 16QAM centered at the origin.
 // along with their golay code + parity bit representations
@@ -140,18 +173,18 @@ static const float oddAPts[4][2]  ={{-.25, .25},{-.25, -.75},{.75, -.75},{.75, .
 static const float evenBPts[4][2] = {{-.25, .75},{.75, .75},{.75, -.25},{-.25, -.25}};
 //010 100 011 101
 static const float oddBPts[4][2]  = {{.25, .25},{.25, -.75},{-.75, -.75},{-.75, .25}};
-
-/*
-for QAM 64 and whole numbers
-//000, 110 , 001, 111
-float evenAPts[4][2] = {{1.0, 7.0},{5.0, 7.0},{5.0, 3.0},{1.0, 3.0}};
-//010 100 011 101
-float oddAPts[4][2]  ={{3.0, 5.0},{3.0, 1.0},{7.0, 1.0},{7.0, 5.0}};
-//000, 110 , 001, 111
-float evenBPts[4][2] = {{3.0, 7.0},{7.0, 7.0},{7.0, 3.0},{3.0, 3.0}};
-//010 100 011 101
-float oddBPts[4][2]  = {{5.0, 5.0},{5.0, 1.0},{1.0, 1.0},{1.0, 5.0}};
 */
+
+//for QAM 64 and whole numbers
+//000, 110 , 001, 111
+static const float evenAPts[4][2] = {{1.0, 7.0},{5.0, 7.0},{5.0, 3.0},{1.0, 3.0}};
+//010 100 011 101
+static const float oddAPts[4][2]  ={{3.0, 5.0},{3.0, 1.0},{7.0, 1.0},{7.0, 5.0}};
+//000, 110 , 001, 111
+static const float evenBPts[4][2] = {{3.0, 7.0},{7.0, 7.0},{7.0, 3.0},{3.0, 3.0}};
+//010 100 011 101
+static const float oddBPts[4][2]  = {{5.0, 5.0},{5.0, 1.0},{1.0, 1.0},{1.0, 5.0}};
+
 
 /*
 *    this function returns all of the pertinant information
@@ -166,7 +199,7 @@ float oddBPts[4][2]  = {{5.0, 5.0},{5.0, 1.0},{1.0, 1.0},{1.0, 5.0}};
 * generalized 16bit qam, besides this has to be done anyway
 *  so we can get out the real number coordinates in the end
  */
-void QAM(float r[12][2], float evenPts[4][2],float oddPts[4][2],float dijs[12][4],float dijks[12][4],unsigned char kparities[12][4]){
+void QAM(float *r, float evenPts[4][2],float oddPts[4][2],float dijs[12][4],float dijks[12][4],unsigned char kparities[12][4]){
 //void QAM(float *r, float *evenPts,float *oddPts,float *dijs,float *dijks,int *kparities){
 
 
@@ -175,12 +208,13 @@ void QAM(float r[12][2], float evenPts[4][2],float oddPts[4][2],float dijs[12][4
     //quadrant = [0 for k in range(12)]
 
     unsigned char i = 0;
+
     for(;i<12;i++){
 
-        float dist000 = distance(r[i],evenPts[0]);
-        float dist110 = distance(r[i],evenPts[1]);
-        float dist001 = distance(r[i],evenPts[2]);
-        float dist111 = distance(r[i],evenPts[3]);
+        float dist000 = distance(&r[i*2],evenPts[0]);
+        float dist110 = distance(&r[i*2],evenPts[1]);
+        float dist001 = distance(&r[i*2],evenPts[2]);
+        float dist111 = distance(&r[i*2],evenPts[3]);
 
         if(dist000<dist001)
         {
@@ -207,10 +241,10 @@ void QAM(float r[12][2], float evenPts[4][2],float oddPts[4][2],float dijs[12][4
 
 
         //min over odds
-        float dist010 = distance(r[i],oddPts[0]);
-        float dist100 = distance(r[i],oddPts[1]);
-        float dist011 = distance(r[i],oddPts[2]);
-        float dist101 = distance(r[i],oddPts[3]);
+        float dist010 = distance(&r[i*2],oddPts[0]);
+        float dist100 = distance(&r[i*2],oddPts[1]);
+        float dist011 = distance(&r[i*2],oddPts[2]);
+        float dist101 = distance(&r[i*2],oddPts[3]);
         if (dist010<dist011){
              dijs[i][1]=dist010;
              dijks[i][1]=dist011;
@@ -468,8 +502,6 @@ float minH6(unsigned char  y[6],float charwts[6],float mus[6][4]){
     unsigned char  candslst[8][6]=  {{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},
                                                         {0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0}};
     //(unsigned char[8][6]) (malloc(8*6*sizeof(unsigned char)));//{
-
-
     unsigned char i = 0;
     for(;i<4;i++){
         //leastreliable = i
@@ -502,12 +534,24 @@ float minH6(unsigned char  y[6],float charwts[6],float mus[6][4]){
     for(;i<4;i++){
         //leastreliable = i
         y[leastreliablechar] = i;
+
+
+        candslst[i+4][0] = H6CodeWordsRev[y[3]][y[4]][y[5]][0];
+        candslst[i+4][1] = H6CodeWordsRev[y[3]][y[4]][y[5]][1];
+        candslst[i+4][2] = H6CodeWordsRev[y[3]][y[4]][y[5]][2];
+        candslst[i+4][3] = y[3] ;
+        candslst[i+4][4] = y[4];
+        candslst[i+4][5] = y[5] ;
+
+
+
+        /*
         candslst[i+4][0] = y[3];
         candslst[i+4][1] = y[4];
         candslst[i+4][2] = y[5];
-        candslst[i+4][3] = H6CodeWords[y[3]][y[4]][y[5]][0];
-        candslst[i+4][4] = H6CodeWords[y[3]][y[4]][y[5]][1];
-        candslst[i+4][5] = H6CodeWords[y[3]][y[4]][y[5]][2];
+        candslst[i+4][3] = H6CodeWordsRev[y[3]][y[4]][y[5]][0];
+        candslst[i+4][4] = H6CodeWordsRev[y[3]][y[4]][y[5]][1];
+        candslst[i+4][5] = H6CodeWordsRev[y[3]][y[4]][y[5]][2];*/
     }
 
     //minimize over the 8 candidate Hexacode words
@@ -527,7 +571,6 @@ float minH6(unsigned char  y[6],float charwts[6],float mus[6][4]){
     }
     //requires a deep copy here
     for(i=0;i<6;i++)y[i] = candslst[min][i];
-
     return minCodeWt;
 }
 
@@ -641,11 +684,7 @@ float kparity(float weight,unsigned char * codeword,unsigned char Btype, unsigne
 
 
 //unsigned char* decode(float r[12][2], float *distance){
-unsigned long decodeLeech(float r[12][2], float *distance){
-
-//
-
-
+unsigned long decodeLeech(float *r, float *distance){
 
 // #####################QAM Dijks ###################
     float* dijs = malloc(sizeof(float)*12*4) ; //{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
@@ -653,9 +692,6 @@ unsigned long decodeLeech(float r[12][2], float *distance){
     //there is a set for each quarter decoder, and the A/B_ij odd/even
     unsigned char* kparities =malloc(sizeof(unsigned char)*12*4) ;// {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
     QAM(r,evenAPts,oddAPts,dijs,dijks,kparities);
-
-
-
 
 
     // #####################Block Confidences ###################
@@ -669,15 +705,11 @@ unsigned long decodeLeech(float r[12][2], float *distance){
 
     unsigned char i;
 
-
-
     // #####################Construct Hexacode Word ###################
     unsigned char *y = malloc(sizeof(unsigned char)*6) ;;
 
 
-
-
-    float* charwts = malloc(sizeof(unsigned char)*6) ;
+    float* charwts = malloc(sizeof(float)*6) ;
     constructHexWord(muEs,y,charwts);
 
 
@@ -687,9 +719,6 @@ unsigned long decodeLeech(float r[12][2], float *distance){
 
 
 
-
-
-    //printf("%d,%d,%d,%d,%d,%d\n",y[0],y[1],y[2],y[3],y[4],y[5]);
     //****chars = y = hexword *****
     unsigned char* codeword =  malloc(sizeof(unsigned char)*24);//{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
     unsigned char* codeParity =  malloc(sizeof(unsigned char)*12) ;
@@ -698,13 +727,7 @@ unsigned long decodeLeech(float r[12][2], float *distance){
 
     weight = hparity(weight,y,prefRepE,dijs,0,codeword);//byref
 
-//    printf("AptEvens\n");
-
     weight =kparity(weight,codeword,0, codeParity,dijks,dijs,kparities);
-
-
-
-
 
     float leastweight = weight;
 
@@ -714,54 +737,37 @@ unsigned long decodeLeech(float r[12][2], float *distance){
     unsigned long retOpt = 0UL;
     unsigned char b;
 
-    for(i=0;i<12;i++){
-
+    //A is default the least weight decoding
+    for(i=0;i<24;i++)
+            retOpt = (retOpt)+(codeword[i]<<i);
 #ifndef golay
-        b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
-        retOpt = b +(retOpt<<3);
-        //retOpt = codeParity[i]+(retOpt<<1);//
+        for(;i<36;i++)
+            retOpt = (retOpt)+(codeParity[i-24]<<i);
 #endif
-#ifdef golay
-        //just the codeword
-        b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
-        retOpt = b +(retOpt<<2);
-#endif
-    }
-    *distance =0;
 
+    *distance =0;
 
     //----------------A Odd Quarter Lattice Decoder----------------
 
-    constructHexWord(muOs,y,charwts);
+    constructHexWord(muOs,y,charwts);;
     weight = minH6(y,charwts,muOs);
+
     weight = hparity(weight,y,prefRepO,dijs,1,codeword);//byref
-
-
-
-//    printf("AptOdds\n");
-
     weight =kparity(weight,codeword,0,codeParity,dijks,dijs,kparities);
-
 
 
     if(weight<leastweight)
     {
         leastweight = weight;
         retOpt = 0UL;
-
-        for(i=0;i<12;i++){
+        for(i=0;i<24;i++)
+                retOpt = (retOpt)+(codeword[i]<<i);
 #ifndef golay
-          b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
-          retOpt = b +(retOpt<<3);
-          //retOpt = codeParity[i]+(retOpt<<1);
+            for(;i<36;i++)
+                retOpt = (retOpt)+(codeParity[i-24]<<i);
+#endif
 
-#endif
-          //just the codeword
-#ifdef golay
-          b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
-          retOpt = b +(retOpt<<2);
-#endif
-        }
+
         *distance =0;
         winner = 1;
     }
@@ -784,20 +790,14 @@ unsigned long decodeLeech(float r[12][2], float *distance){
         retOpt = 0UL;
 
         leastweight = weight;
-        for(i=0;i<12;i++){
-#ifndef golay
-            b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
-            retOpt = b +(retOpt<<3);
-            //retOpt = codeParity[i]+(retOpt<<1);
-#endif
 
-#ifdef golay
-        //just the codeword
-            b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
-            retOpt = b +(retOpt<<2);
- #endif
+        for(i=0;i<24;i++)
+                retOpt = (retOpt)+(codeword[i]<<i);
+    #ifndef golay
+            for(;i<36;i++)
+                retOpt = (retOpt)+(codeParity[i-24]<<i);
+    #endif
 
-        }
         *distance =1;
         winner = 2;
 
@@ -814,29 +814,18 @@ unsigned long decodeLeech(float r[12][2], float *distance){
     if(weight<leastweight){
         retOpt = 0UL;
         leastweight = weight;
+        for(i=0;i<24;i++)
+                retOpt = (retOpt)+(codeword[i]<<i);
+    #ifndef golay
+            for(;i<36;i++)
+                retOpt = (retOpt)+(codeParity[i-24]<<i);
+    #endif
 
-        for(i=0;i<12;i++)
-        {
-#ifndef golay
-            b = (codeword[i*2]<<2) + (codeword[i*2+1]<<1) + (codeParity[i]);
-            retOpt = b +(retOpt<<3);
-            //retOpt = codeParity[i]+(retOpt<<1);
-#endif
-#ifdef golay
-            //just the codeword
-              b = (codeword[i*2]<<1) + (codeword[i*2+1]);// + (codeParity[i]);
-              retOpt = b +(retOpt<<2);
-#endif
-            //just the parity
-
-
-        }
         *distance =1;
         winner =3;
     }
     *distance = winner;
     //*distance += leastweight;
-
     free(dijs);
     free(dijks);
     free(kparities);

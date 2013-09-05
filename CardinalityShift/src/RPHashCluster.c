@@ -11,13 +11,15 @@
  * unlike@distance() in the main class, it
  * takes the square root.
  */
-float testDist(float *r , float* q,int len ){
+float testDist(unsigned char * r , float * q,int len ){
   float dist = 0;
   int i;
   for (i=0;i<len;i++)
   {
-      dist += (r[i]- q[i]) *(r[i]- q[i])  ;
+      //printf("%.1f,",(float)r[i]);
+      dist += ((float)r[i]- (float)q[i]) *((float)r[i]- (float)q[i])  ;
   }
+  //printf("\n");
 return quicksqrt(dist);
 }
 

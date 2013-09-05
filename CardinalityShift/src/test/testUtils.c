@@ -13,13 +13,14 @@ double randn() {
 }
 
 
+
 /*
  *print @size values of an integer vector @v
  */
 inline void printVecI(unsigned char* v,int size){
   unsigned char i = 0;
   for(;i<size;i++){
-      printf("%i ",v[i]);
+      printf("%i",v[i]);
       if(i<size-1)printf(",",v[i]);
   }
 
@@ -72,7 +73,7 @@ int weight(unsigned long u){
 
 
 
-void convertToCoords(unsigned long c,unsigned char Bpoint, unsigned char* point)
+void convertToCoords(unsigned long c, unsigned char* point)
 {
  /*
 #  7 A000 B000 A110 B110
@@ -86,29 +87,49 @@ void convertToCoords(unsigned long c,unsigned char Bpoint, unsigned char* point)
   // visualizing so it remains in test.
   //    01    23   45   67     89  10 11      12 13  14 15
   //    000  001 010  011 100 101         110      111
+  /*
+  float axCoords[] = {-.75,.25, -.25,.75,-.25,.75,.25,-.75 };
+  float ayCoords[] = {.75,-.25,.25,-.75,-.75,.25,.75,-.25};
+  float bxCoords[] = {-.25,.75,.25,-.75,.25,-.75,.75,-.25};
+  float byCoords[] = {.75,-.25, .25,-.75,-.75,.25,.75,-.25};
+  */
+
   unsigned char axCoords[] = {1,5, 3,7,3,7,5,1 };
   unsigned char ayCoords[] = {7,3,5,1,1,5,7,3};
   unsigned char bxCoords[] = {3,7,5,1,5,1,7,3};
   unsigned char byCoords[] = {7,3, 5,1,1,5,7,3};
 
 
-  int i = 11;
 
 
-  if(Bpoint==0){
-      for(;i>-1;i--){
-            point[i*2]= axCoords[c&7];
-            point[i*2+1]=ayCoords[c&7];
-            c = c>>3;
+
+  int parity = (c&0xfff000000)>>24;//seperate these parts
+  int Bpoint = weight(parity)&1;
+  printf("%i\n",weight(parity));
+  c=c&0xffffff;
+
+  int i;
+  int pt = 0;
+
+  if(Bpoint==0)
+    {
+      for(i=0;i<12;i++){
+          pt = ((c&1)<<2)+(c&2)+(parity&1)  ;
+            point[i*2]= axCoords[pt];
+            point[i*2+1]=ayCoords[pt];
+            c = c>>2;
+            parity = parity>>1;
       }
   }
-
-  for(;i>-1;i--){
-        point[i*2]= bxCoords[c&7];
-        point[i*2+1]=byCoords[c&7];
-        c = c>>3;
+  else{
+      for(i=0;i<12;i++){
+          pt = ((c&1)<<2)+(c&2)+(parity&1)  ;
+            point[i*2]= bxCoords[pt];
+            point[i*2+1]=byCoords[pt];
+            c = c>>2;
+            parity = parity>>1;
+      }
   }
-
 }
 
 
