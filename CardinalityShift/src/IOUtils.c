@@ -30,7 +30,7 @@ float* mat(const char * infile,long * m,long *n){
 
      fclose(fptr);
      free(str);
-     printf("read %u \n",length,m,n);
+     //printf("read %u \n",length,m,n);
 
      return data;
 

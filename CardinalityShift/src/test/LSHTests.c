@@ -2,8 +2,12 @@
 #include "testUtils.c"
 #include "../IOUtils.c"
 #define NULL 0
+
+#include <stdlib.h>
+#include <sys/time.h>
+
 //off is better?
-#define AVG_CLUSTER
+//#define AVG_CLUSTER
 /*
  * As a sanity check for lattice decoding, generate a bunch of random
  * vectors and store their hashes. At set intervals output the number of
@@ -83,7 +87,7 @@ void testRatios2(int tests , float bias, int * counts, int * totals, float * buc
           unsigned long ret1 = lshHash(V, len, 1, 1671711, M,&distance);
 
           int t = 0;
-          for(k=0;k<16 && t==0;k++)
+          for(k=0;k<1 && t==0;k++)
             t =(int)(lshHash(Q, len, 1, 1671711,M, &distance) == ret1);
 
             counts[b]+= t;
@@ -520,12 +524,8 @@ void testHASH(int tablesize){
   */
 void testRatios(int tests, int l, int dim){
 
-
   Quantizer * q= initializeQuantizer(decodeLeech, 24);
   initLSH(q);
-
-
-  float* R = GenRandomN(dim,24,tests);
 
   float bias ;
   int i,j,b,k;
@@ -535,6 +535,8 @@ void testRatios(int tests, int l, int dim){
   float* buckets = malloc(l*sizeof(float));
   int* counts = malloc(l*sizeof(int));
   int* totals = malloc(l*sizeof(int));
+  float dist;
+  unsigned long long ret1,ret2;
 
   for(i=0;i<l;i++)
     {
@@ -543,46 +545,46 @@ void testRatios(int tests, int l, int dim){
             totals[i]=0;
     }
 
+
+  float* R = GenRandomN(dim,24,tests);
+
+  //ret1 =  decodeLeech(R, &dist);
+  //convertToCoords( ret1, R);//find nearest center
+  //ret1 =  q->decode(R, &dist);
+
+  //printVecF(R,24);
+  //print(ret1,9,4);
+  //ret1 =  decodeLeech(R, &dist);
+  //convertToCoords( ret1, R);
+
+
+
   for(k=0;k<100;k++)
   {
-            bias = k*.005;
-
+            bias = k*.01*(((float)dim)/24.0);
 
               for (i=0;i<tests;)
                 {
-                        float dist;
+                  //ret1 =  decodeLeech(r, &dist);
+                        genRandomVector(dim,1.0, r);
+                        ret1 = lshHash(r, dim, 1,1677771,R, &dist);
                         for(j=0;j<dim;j++){
-                            r[j]=2.0*((float)rand())/RAND_MAX -1;
                             p[j]=r[j]   +   bias*(sampleNormal());
                          }
-
                           b = 0;
                           dist = testDist(r,p,dim);
                           while(dist>buckets[b++] &&b<l);
-
-                          long ret1 =  lshHash(r, dim, 1, tests, R, &dist);
-
-
-                          long ret2;
-                          int trs = 0;
-                          //10 is log(# tests) for now
-                          for (;trs<15;trs++){
-                              ret2=lshHash(p, dim, 1, tests, R, &dist);
-                              if(ret1==ret2){
-                                  counts[b]++;
-                                  trs = 15;
-                              }
-
-                          }
-
                           totals[b]++;
+                          ret2 = lshHash(p, dim, 1,1677771,R, &dist);
+                          //ret2=  decodeLeech(p, &dist);
+                          counts[b]+=(ret1==ret2);
                           i++;
               }
   }
 
-  /*or(i=0;i<l;i++)printf("%.2f, ",buckets[i]);printf("\n");
+  for(i=0;i<l;i++)printf("%.2f, ",buckets[i]);printf("\n");
   for(i=0;i<l;i++)printf("%i, ",counts[i]);  printf("\n");
-  for(i=0;i<l;i++)printf("%i, ",totals[i]);  printf("\n");*/
+  for(i=0;i<l;i++)printf("%i, ",totals[i]);  printf("\n");
 }
 
 
@@ -651,37 +653,37 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
    float* clusterCenters=  generateRandomCenters(dim,clu) ;
    float* ret=generateGaussianClusters(part,dim,clu,clusterCenters);
 
-   int i,j;
-   for(i=0;i<clu;i++)
-   {
-
-       unsigned long f = 0;
-       for(j=i*dim;j<(dim*(i+1));j+=24){
-           f = f ^q->decode(&clusterCenters[j],&nu);
-       }
-       printf("%u : ",f);
-
-       printVecF(&clusterCenters[i*dim],5);
-   }
-
-   printf("--------------------------------------------------------\n");
+//   int i,j;
+//   for(i=0;i<clu;i++)
+//   {
+//
+//       unsigned long f = 0;
+//       for(j=i*dim;j<(dim*(i+1));j+=24){
+//           f = f ^q->decode(&clusterCenters[j],&nu);
+//       }
+//       printf("%u : ",f);
+//
+//       printVecF(&clusterCenters[i*dim],5);
+//   }
+//
+//   printf("--------------------------------------------------------\n");
 
    srand((unsigned int)time(0));
-   float * centroids = rpHash(ret, clu*part, dim, q, hashMod, clu);
-   for(i=0;i<clu;i++)
-     {
-       unsigned long f = 0;
-       for(j=i*dim;j<(dim*(i+1));j+=24){
-           f = f ^q->decode(&centroids[j],&nu);
-       }
-       printf("%u : ",f);
-
-
-       int nearest = NN(&centroids[i*dim],clusterCenters,dim,clu);
-       printf("%i : %.4f : ",nearest,testDist(&centroids[i*dim],&clusterCenters[nearest*dim],dim));
-       printVecF(&centroids[i*dim],5);
- }
- printf("\n");
+   float * centroids = rpHash2(ret, clu*part, dim, q, hashMod, clu);
+//   for(i=0;i<clu;i++)
+//     {
+//       unsigned long f = 0;
+//       for(j=i*dim;j<(dim*(i+1));j+=24){
+//           f = f ^q->decode(&centroids[j],&nu);
+//       }
+//       printf("%u : ",f);
+//
+//
+//       int nearest = NN(&centroids[i*dim],clusterCenters,dim,clu);
+//       printf("%i : %.4f : ",nearest,testDist(&centroids[i*dim],&clusterCenters[nearest*dim],dim));
+//       printVecF(&centroids[i*dim],5);
+// }
+// printf("\n");
 
 
    free(clusterCenters);
@@ -693,7 +695,6 @@ void big_bucket_Search(int part ,int clu, int dim,int hashMod)
 
 void clusterFile(const char* infile , const char* clusterFile,int numClusters, int hashMod)
 {
-
    long numVectors;
    long dim;
    Quantizer * q= initializeQuantizer(decodeLeech, 24);
@@ -704,61 +705,67 @@ void clusterFile(const char* infile , const char* clusterFile,int numClusters, i
    // could use this to compute average distance and cluster affinity
    float* ret= mat(infile,&numVectors,&dim);
 
-   float * centroids = rpHash(ret, numVectors, dim, q, hashMod, numClusters);
+
+
+struct timeval tv;
+struct timezone tz;
+gettimeofday(&tv, &tz);
+double start1 =tv.tv_sec+((float)tv.tv_usec)/1000000.0;
+float * centroids = rpHash(ret, numVectors, dim, q, hashMod, numClusters);
+gettimeofday(&tv, &tz);
+double end1 = tv.tv_sec+((float)tv.tv_usec)/1000000.0;
+printf("%f ", end1-start1);
 
    if(clusterFile==NULL){
 
 
-     for(i=0;i<numClusters;i++)
-       {
-
-         unsigned long f = 0;
-         for(j=i*dim;j<(dim*(i+1));j++){
-             f = f ^q->decode(&centroids[j],&nu);
-         }
-         printf("%u : ",f);
-
-         printVecF(&centroids[i*(dim)],5);
-       }
-
+//     for(i=0;i<numClusters;i++)
+//       {
+//
+//         unsigned long f = 0;
+//         for(j=i*dim;j<(dim*(i+1));j++){
+//             f = f ^(q->decode(&centroids[j],&nu));
+//         }
+//         printf("%u : ",f);
+//
+//         printVecF(&centroids[i*(dim)],5);
+//       }
+     write("out.mat", numClusters, dim, centroids);
 
    }else{
 
        float* clusterCenters=mat(clusterFile,&numVectors,&dim);
 
-       for(i=0;i<numClusters;i++)
-       {
-           printf("%u : ",q->decode(&clusterCenters[i*dim],&nu));
-           printVecF(&clusterCenters[i*dim],5);
-       }
+//       for(i=0;i<numClusters;i++)
+//       {
+//           printf("%u : ",q->decode(&clusterCenters[i*dim],&nu));
+//           printVecF(&clusterCenters[i*dim],5);
+//       }
 
-       printf("--------------------------------------------------------\n");
-
-       for(i=0;i<numClusters;i++)
-         {
-
-           unsigned long f = 0;
-           for(j=i*dim;j<(dim*(i+1));j++){
-               f = f ^q->decode(&clusterCenters[j],&nu);
-           }
-           printf("%u : ",f);
-
-
-           int nearest = NN(&centroids[i*dim],clusterCenters,dim,numVectors);
-           printf("%i : %.4f :  ",nearest,testDist(&centroids[i*dim],&clusterCenters[nearest*dim],dim));
-           printVecF(&centroids[i*dim],10);
-     }
-
-       printf("\n");
+//       printf("--------------------------------------------------------\n");
+//
+//       for(i=0;i<numClusters;i++)
+//         {
+//
+//           unsigned long f = 0;
+//           for(j=i*dim;j<(dim*(i+1));j++){
+//               f = f ^q->decode(&clusterCenters[j],&nu);
+//           }
+//           printf("%u : ",f);
+//
+//
+//           int nearest = NN(&centroids[i*dim],clusterCenters,dim,numVectors);
+//           printf("%i : %.4f :  ",nearest,testDist(&centroids[i*dim],&clusterCenters[nearest*dim],dim));
+//           printVecF(&centroids[i*dim],10);
+//     }
+//
+//       printf("\n");
 
    }
 
    free(ret);
    free(centroids);
-
 }
-
-
 
 void countUnique(){
   /*
@@ -775,23 +782,26 @@ void countUnique(){
   float * r = malloc(sizeof(float)*24);
   float dist;
 
+  int runs = (1<<24);
   //birthday paradox hashing number bound log(300k)*300k = 5458380
-  int bdaycollision =5458380*8;
+  int bdaycollision = runs;//5458380*16;
   unsigned char * storage = malloc(sizeof(unsigned char)*(bdaycollision+1));
 
   int * weights = malloc(sizeof(int)*25);
   unsigned char* point = malloc(sizeof(unsigned char)*24);
+  float* fltPoint = malloc(sizeof(float)*24);
   for(i=0;i<bdaycollision+1;i++)storage[i] = 0;
 
   int count = 0;
   int max = 0  ;
 
-  int runs = (1<<22);
 
-  unsigned long d;
+  float dis = 0.0;
+  unsigned long long d;
 
-  for(i=0;i<runs;i++){
-             if(i%335544==0){
+for(i=0;i<runs;i++)
+{
+             if(i%(runs/100)==0){
                  int j = 0;
                  count = 0 ;
                  for(j=0;j<bdaycollision+1;j++){
@@ -800,19 +810,13 @@ void countUnique(){
                          if(storage[j]>max)max= storage[j];
                      }
                  }
-                 printf("%i \n",count);
-                 //printf("%i\n",i);
+                 printf("%i,%i \n",i,count);
              }
 
-
             genRandomVector(24,1.0,r);
-            int j;
-            for(j=0;j<25;j++)r[j] = (r[j]+1)*4.0;
+            d = fnvHash(decodeLeech(r,&dis),bdaycollision);
 
-                d = decodeLeech(r,&dist);
-                printf("%i, ",(int)dist);
-                convertToCoords(d, point);
-                storage[ fnvHashStr(point, 24,bdaycollision)]++;
+            if(storage[d]<255)storage[d]++;
 
           }
 
@@ -833,35 +837,35 @@ void countUnique(){
 
 int main(int argc, char* argv[])
 {
-  srand((unsigned int)1534211);
-  float u;
-  float* k = malloc(sizeof(float)*24);
-  for(;u<12;u++){
-      k[(int)u*2]=-.25;
-      k[(int)u*2+1]=-.75;
-  }
-
-
-  countUnique();
+  srand((unsigned int)1532711);
+  //countUnique();
+//  testRatios(100000, 60, 24);
+//  testRatios(100000, 60, 240);
+//  testRatios(100000, 60, 2400);
+//return;
+//countUnique();
 
 
   int hashMod = 10000;
   char* centsFile = NULL;
-  int clusters = 10;
+  int clusters = 8;
  //dont generate data just run
   if(argc==1){
-      int partitionSize = 1000;
-      int dimensions = 2000;
+      int partitionSize = 2000;
+      int dimensions = 1000;
       big_bucket_Search(partitionSize,clusters,dimensions,hashMod);
       return 0;
   }
   srand((unsigned int)time(0));
-  //just generate data
-  if(argc==2){
-      int dimensions = 1008;
-      generate_data_file(dimensions, clusters, atoi(argv[1]));
-      return 0;
-  }
+
+//just generate data
+//  if(argc==2){
+//      int dimensions = 1008;
+//      generate_data_file(dimensions, clusters, atoi(argv[1]));
+//      return 0;
+//  }
+
+
 
 //implicitly > 2 ie a file on the cmd
 
@@ -872,6 +876,9 @@ int main(int argc, char* argv[])
   //cluster a file
   if(argc>4) hashMod=atoi(argv[4]);
   
+
+
+
   clusterFile(argv[1] ,centsFile, atoi(argv[2]), hashMod);
 
   return 0;

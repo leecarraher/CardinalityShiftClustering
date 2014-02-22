@@ -84,7 +84,9 @@ inline float quicksqrt(float b)
  */
 //#define golay
 
-inline float distance(float *cp,float pt[2])
+inline float distance(
+    float *cp,
+    float pt[2])
 {
  // printf("%f,%f : %f,%f = ",cp[0],cp[1],pt[0],pt[1]);
     float s =(cp[0]-pt[0])*(cp[0]-pt[0]) + (cp[1]-pt[1])*(cp[1]-pt[1]);
@@ -160,30 +162,106 @@ static const unsigned char H6CodeWordsRev[4][4][4][3]  = {
     }};
 
 
-
 /*
+#define APT  1
+#define BPT  3
+#define CPT  5
+#define DPT  7
+*/
+
+#define APT  -.75
+#define BPT  -.25
+#define CPT  .25
+#define DPT  .75
+
 // shaping -.75, -.25,+.25,+.75
 //the unit scaled points of 16QAM centered at the origin.
 // along with their golay code + parity bit representations
 //000, 110 , 001, 111
-static const float evenAPts[4][2] = {{-.75, .75},{.25, .75},{.25, -.25},{-.75, -.25}};
+static const float evenAPts[4][2] = {{APT, DPT},{CPT, DPT},{CPT, BPT},{APT, BPT}};
 //010 100 011 101
-static const float oddAPts[4][2]  ={{-.25, .25},{-.25, -.75},{.75, -.75},{.75, .25}};
+static const float oddAPts[4][2]  ={{BPT, CPT},{BPT, APT},{DPT, APT},{DPT, CPT}};
 //000, 110 , 001, 111
-static const float evenBPts[4][2] = {{-.25, .75},{.75, .75},{.75, -.25},{-.25, -.25}};
+static const float evenBPts[4][2] = {{BPT, DPT},{DPT, DPT},{DPT, BPT},{BPT, BPT}};
 //010 100 011 101
-static const float oddBPts[4][2]  = {{.25, .25},{.25, -.75},{-.75, -.75},{-.75, .25}};
-*/
+static const float oddBPts[4][2]  = {{CPT, CPT},{CPT, APT},{APT, APT},{APT, CPT}};
 
-//for QAM 64 and whole numbers
-//000, 110 , 001, 111
-static const float evenAPts[4][2] = {{1.0, 7.0},{5.0, 7.0},{5.0, 3.0},{1.0, 3.0}};
-//010 100 011 101
-static const float oddAPts[4][2]  ={{3.0, 5.0},{3.0, 1.0},{7.0, 1.0},{7.0, 5.0}};
-//000, 110 , 001, 111
-static const float evenBPts[4][2] = {{3.0, 7.0},{7.0, 7.0},{7.0, 3.0},{3.0, 3.0}};
-//010 100 011 101
-static const float oddBPts[4][2]  = {{5.0, 5.0},{5.0, 1.0},{1.0, 1.0},{1.0, 5.0}};
+
+
+void pp(
+    unsigned long ret,
+    int ct,
+    int grsize)
+{
+  int i,j,err;
+  for(i=0;i<ct;i++)
+  {
+      for(j=0;j<grsize;j++)
+      {
+          printf("%d",ret&1);
+          //err +=ret&1;
+          ret=ret>>1;
+
+      }
+      printf(" ");
+  }
+  //if(err%2) printf("error \n");else
+    printf("\n");
+}
+
+void convertToCoords(
+    unsigned long long c,
+    float* point)
+{
+
+  float axCoords[] = {APT,CPT, BPT,DPT,BPT,DPT,CPT,APT };
+  float ayCoords[] = {DPT,BPT,CPT,APT,APT,CPT,DPT,BPT};
+  float bxCoords[] = {BPT,DPT,CPT,APT,CPT,APT,DPT,BPT};
+  float byCoords[] = {DPT,BPT, CPT,APT,APT,CPT,DPT,BPT};
+
+
+  int parity = (c&0xfff);//seperate these parts
+
+
+
+  //compute A/B point from parity
+  int u = parity;
+  int Bpoint = 0;
+  while(u>0)
+   {
+      if(u &1 == 1)Bpoint++;
+      u = (u>>1);
+  }
+
+
+  c=(c&0xffffff000)>>12;
+
+  int i;
+  int pt = 0;
+  if((Bpoint &1))
+    {
+      for(i=0;i<12;i++){
+                  pt = ((c&1)<<2)+(c&2)+(parity&1);
+                  point[i*2]= bxCoords[pt];
+                  point[i*2+1]=byCoords[pt];
+                  c = c>>2;
+                  parity = parity>>1;
+            }
+  }
+  else{
+      for(i=0;i<12;i++){
+                pt = ((c&1)<<2)+(c&2)+(parity&1)  ;
+                  point[i*2]= axCoords[pt];
+                  point[i*2+1]=ayCoords[pt];
+                  c = c>>2;
+                  parity = parity>>1;
+            }
+  }
+
+
+}
+
+
 
 
 /*
@@ -199,7 +277,14 @@ static const float oddBPts[4][2]  = {{5.0, 5.0},{5.0, 1.0},{1.0, 1.0},{1.0, 5.0}
 * generalized 16bit qam, besides this has to be done anyway
 *  so we can get out the real number coordinates in the end
  */
-void QAM(float *r, float evenPts[4][2],float oddPts[4][2],float dijs[12][4],float dijks[12][4],unsigned char kparities[12][4]){
+void QAM(
+    float *r,
+    float evenPts[4][2],
+    float oddPts[4][2],
+    float dijs[12][4],
+    float dijks[12][4],
+    unsigned char kparities[12][4])
+{
 //void QAM(float *r, float *evenPts,float *oddPts,float *dijs,float *dijks,int *kparities){
 
 
@@ -273,7 +358,13 @@ void QAM(float *r, float evenPts[4][2],float oddPts[4][2],float dijs[12][4],floa
 /*
     computes the Z2 block confidence of the concatonated points projections onto GF4 characters
 */
-void blockConf(float dijs[12][4],float muEs[6][4],float muOs[6][4],unsigned char prefRepE[6][4][4],unsigned char prefRepO[6][4][4]){
+void blockConf(
+    float dijs[12][4],
+    float muEs[6][4],
+    float muOs[6][4],
+    unsigned char prefRepE[6][4][4],
+    unsigned char prefRepO[6][4][4])
+{
 
 
     //each two symbols is taken as a single character in GF4
@@ -451,7 +542,11 @@ void blockConf(float dijs[12][4],float muEs[6][4],float muOs[6][4],unsigned char
 /*here we are looking for the least character in the H6 hexacdoe word
    returns the hexacode word and the wt, for using in locating the least reliable symbol
 */
-void constructHexWord(float mus[6][4],unsigned char chars[6],float charwts[6]){
+void constructHexWord(
+    float mus[6][4],
+    unsigned char chars[6],
+    float charwts[6])
+{
 
     unsigned char i = 0;
     for(;i<6;i++)
@@ -479,12 +574,18 @@ void constructHexWord(float mus[6][4],unsigned char chars[6],float charwts[6]){
     }
 }
 
-
-
 /*
     this is the minimization over the hexacode function using the 2nd algorithm of  amrani and be'ery ieee may '96
 */
-float minH6(unsigned char  y[6],float charwts[6],float mus[6][4]){
+float minH6(
+    unsigned char  y[6],
+    float charwts[6],
+    float mus[6][4])
+{
+
+
+
+
 
 
     //locate least reliable
@@ -498,24 +599,43 @@ float minH6(unsigned char  y[6],float charwts[6],float mus[6][4]){
         leastreliablewt = charwts[2];
         leastreliablechar = 2;
     }
+
+
+    //minimize over the 8 candidate Hexacode words
+    float minCodeWt = 1000.0;
+    unsigned char j = 0;
+    unsigned char  min = 0;
+    float m_dist;
+
+    unsigned char  leastcan[6] = {0,0,0,0,0,0};
     //build candidate list
-    unsigned char  candslst[8][6]=  {{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},
-                                                        {0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0}};
+   // unsigned char  candslst[8][6]=  {{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},
+   //                                                     {0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0},{0,0,0,0,0,0}};
+
+
+    unsigned char  cand[6] = {0,0,0,0,0,0};
+
+
     //(unsigned char[8][6]) (malloc(8*6*sizeof(unsigned char)));//{
-    unsigned char i = 0;
-    for(;i<4;i++){
-        //leastreliable = i
-
+    unsigned char i;
+    for(i = 0;i<4;i++){
         y[leastreliablechar] = i;
+        cand[0] = y[0];
+        cand[1] = y[1];
+        cand[2] = y[2];
+        cand[3] = H6CodeWords[y[0]][y[1]][y[2]][0];
+        cand[4] = H6CodeWords[y[0]][y[1]][y[2]][1];
+        cand[5] = H6CodeWords[y[0]][y[1]][y[2]][2];
 
-        candslst[i][0] = y[0];
-        candslst[i][1] = y[1];
-        candslst[i][2] = y[2];
-        candslst[i][3] = H6CodeWords[y[0]][y[1]][y[2]][0];
-
-        candslst[i][4] = H6CodeWords[y[0]][y[1]][y[2]][1];
-        candslst[i][5] = H6CodeWords[y[0]][y[1]][y[2]][2];
+        m_dist = 0.0;
+        for( j=0;j<6;j++)m_dist += mus[j][cand[j]];
+        if(m_dist < minCodeWt){
+            minCodeWt = m_dist;
+            for(j=0;j<6;j++)  leastcan[j] = cand[j];
+        }
     }
+
+
 
     //y2
     //locate the least reliable symbol in each
@@ -530,47 +650,32 @@ float minH6(unsigned char  y[6],float charwts[6],float mus[6][4]){
         leastreliablechar = 5;
     }
 
-    i = 0;
-    for(;i<4;i++){
-        //leastreliable = i
-        y[leastreliablechar] = i;
-
-
-        candslst[i+4][0] = H6CodeWordsRev[y[3]][y[4]][y[5]][0];
-        candslst[i+4][1] = H6CodeWordsRev[y[3]][y[4]][y[5]][1];
-        candslst[i+4][2] = H6CodeWordsRev[y[3]][y[4]][y[5]][2];
-        candslst[i+4][3] = y[3] ;
-        candslst[i+4][4] = y[4];
-        candslst[i+4][5] = y[5] ;
-
-
-
-        /*
-        candslst[i+4][0] = y[3];
-        candslst[i+4][1] = y[4];
-        candslst[i+4][2] = y[5];
-        candslst[i+4][3] = H6CodeWordsRev[y[3]][y[4]][y[5]][0];
-        candslst[i+4][4] = H6CodeWordsRev[y[3]][y[4]][y[5]][1];
-        candslst[i+4][5] = H6CodeWordsRev[y[3]][y[4]][y[5]][2];*/
-    }
-
-    //minimize over the 8 candidate Hexacode words
-    float minCodeWt = 1000.0;
-    //minCodeWord = [], this is chars
-    i = 0;
-    unsigned char j = 0;
-    unsigned char  min = 0;
     for(;i<8;i++){
-        float m_dist = 0.0;
-        j=0;
-        for(;j<6;j++)m_dist = m_dist+ mus[j][candslst[i][j]];
-        if(m_dist < minCodeWt){
+        y[leastreliablechar] = i-4;
+
+        cand[0] = H6CodeWordsRev[y[3]][y[4]][y[5]][0];
+        cand[1] = H6CodeWordsRev[y[3]][y[4]][y[5]][1];
+        cand[2] = H6CodeWordsRev[y[3]][y[4]][y[5]][2];
+        cand[3] = y[3] ;
+        cand[4] = y[4];
+        cand[5] = y[5] ;
+
+
+        m_dist = 0.0;
+        for( j=0;j<6;j++)m_dist += mus[j][cand[j]];
+
+        if(m_dist < minCodeWt)
+        {
             minCodeWt = m_dist;
-            min = i;
+            for(j=0;j<6;j++) leastcan[j] = cand[j];
+
         }
     }
-    //requires a deep copy here
-    for(i=0;i<6;i++)y[i] = candslst[min][i];
+
+    for(j=0;j<6;j++)y[j] = leastcan[j];
+
+    //printf("%i %i %i   %i %i %i\n",y[0],y[1],y[2],y[3],y[4],y[5],y[6]);
+
     return minCodeWt;
 }
 
@@ -580,14 +685,21 @@ float minH6(unsigned char  y[6],float charwts[6],float mus[6][4]){
     here we are resolving the h-parity. which requires that the overall least significant bit parities equal the
     bit parities of each projected GF4 block. aka column parity must equal 1st row parity
 */
-float hparity(float weight,unsigned char hexword[6],unsigned char prefReps[6][4][4],float dijs[12][4],unsigned char oddFlag,unsigned char * codeword){
+float hparity(
+    float weight,
+    unsigned char hexword[6],
+    unsigned char prefReps[6][4][4],
+    float dijs[12][4],
+    unsigned char oddFlag,
+    unsigned char * codeword)
+{
 
    unsigned char parity= 0;
-   unsigned char i =0;
+   unsigned char i;;
 
 
 
-    for(;i<6;i++){
+    for(i=0;i<6;i++){
 
         //create the golay codeword from the hexacode representation
         codeword[i*4]=prefReps[i][hexword[i]][0];
@@ -596,32 +708,35 @@ float hparity(float weight,unsigned char hexword[6],unsigned char prefReps[6][4]
         codeword[i*4+3]=prefReps[i][hexword[i]][3];
 
         //
-        parity = parity + prefReps[i][hexword[i]][0];//this should be the highest order bit
+        parity = parity ^ prefReps[i][hexword[i]][0];//this should be the highest order bit
+
+        //printf("%i%i%i%i ", codeword[i*4],codeword[i*4+1],codeword[i*4+2],codeword[i*4+3]);
     }
-
-
-
-    /*this is needed otherwise 2x golay code are emitted*/
 
     if((parity&1) == oddFlag){
+        //printf("\n");
         return weight;
     }
-
+/*
+    if(oddFlag)
+    printf(" ---(Odd)>> ");
+    else
+      printf(" ---(Eve)>> ");
+*/
 
     float leastwt = 1000.0;
     unsigned char least = 0;
     float deltaX;
     unsigned char idx1,idx2;
-    i = 0;
     //walk along the codeword again
-    for(;i<6;i++){
+    for(i=0;i<6;i++){
 
         idx1 =(codeword[4*i]<<1) +codeword[4*i+1];
         idx2 =(codeword[4*i+2]<<1) +codeword[4*i+3];
         // compute cost of complementing the hexacode representation ^3 of bits
         //select minimal cost complement.
         deltaX = (dijs[2*i][idx1^3] + dijs[2*i+1][idx2^3]) - (dijs[2*i][idx1] + dijs[2*i+1][idx2]);
-
+        //printf("%f \n" , deltaX);
 
         if (deltaX < leastwt){
             leastwt = deltaX;
@@ -638,10 +753,24 @@ float hparity(float weight,unsigned char hexword[6],unsigned char prefReps[6][4]
     codeword[least+2]= codeword[least+2]^1;
     codeword[least+3]= codeword[least+3]^1;
 
+    /*
+    for(i=0;i<6;i++){
+        printf("%i%i%i%i ", codeword[i*4],codeword[i*4+1],codeword[i*4+2],codeword[i*4+3]);
+    }
+    printf(": [%i , %f]\n" , least,leastwt);
+  */
     return weight;
 }
 
-float kparity(float weight,unsigned char * codeword,unsigned char Btype, unsigned char * codeParity, float dijks[12][4], float dijs[12][4],unsigned char kparities[12][4]){
+float kparity(
+    float weight,
+    unsigned char * codeword,
+    unsigned char Btype,
+    unsigned char * codeParity,
+    float dijks[12][4],
+    float dijs[12][4],
+    unsigned char kparities[12][4])
+{
     /*
         this last parity check assures that all A or B points have even/odd parity
     */
@@ -680,26 +809,26 @@ float kparity(float weight,unsigned char * codeword,unsigned char Btype, unsigne
 }
 
 
-
-
-
 //unsigned char* decode(float r[12][2], float *distance){
-unsigned long decodeLeech(float *r, float *distance){
+unsigned long long decodeLeech(
+    float *r,
+float *distance)
+{
 
 // #####################QAM Dijks ###################
-    float* dijs = malloc(sizeof(float)*12*4) ; //{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
-    float* dijks =malloc(sizeof(float)*12*4) ;// {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+    float* dijs = malloc(sizeof(float)*12*4) ;
+    float* dijks =malloc(sizeof(float)*12*4) ;
     //there is a set for each quarter decoder, and the A/B_ij odd/even
-    unsigned char* kparities =malloc(sizeof(unsigned char)*12*4) ;// {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+    unsigned char* kparities =malloc(sizeof(unsigned char)*12*4) ;
     QAM(r,evenAPts,oddAPts,dijs,dijks,kparities);
 
 
     // #####################Block Confidences ###################
     //         0  1    w   W
-    float* muEs = malloc(sizeof(float)*6*4*4) ;//{{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
-    float *muOs = malloc(sizeof(float)*6*4*4) ;//{{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};
-    unsigned char* prefRepE=malloc(sizeof(unsigned char)*6*4*4) ;// = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
-    unsigned char* prefRepO=malloc(sizeof(unsigned char)*6*4*4) ;// = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+    float* muEs = malloc(sizeof(float)*6*4*4) ;
+    float *muOs = malloc(sizeof(float)*6*4*4) ;
+    unsigned char* prefRepE=malloc(sizeof(unsigned char)*6*4*4) ;
+    unsigned char* prefRepO=malloc(sizeof(unsigned char)*6*4*4) ;
 
     blockConf(dijs,muEs,muOs,prefRepE,prefRepO); //just run through both as its faster, but could conserve array allocation
 
@@ -720,7 +849,7 @@ unsigned long decodeLeech(float *r, float *distance){
 
 
     //****chars = y = hexword *****
-    unsigned char* codeword =  malloc(sizeof(unsigned char)*24);//{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
+    unsigned char* codeword =  malloc(sizeof(unsigned char)*24);
     unsigned char* codeParity =  malloc(sizeof(unsigned char)*12) ;
 
     int winner = 0;
@@ -734,18 +863,18 @@ unsigned long decodeLeech(float *r, float *distance){
 
     //unsigned long leastCodeword;
     unsigned char* leastCodeword = malloc(24*sizeof(unsigned char));
-    unsigned long retOpt = 0UL;
+    unsigned long long retOpt = 0UL;
     unsigned char b;
 
     //A is default the least weight decoding
     for(i=0;i<24;i++)
             retOpt = (retOpt)+(codeword[i]<<i);
 #ifndef golay
-        for(;i<36;i++)
-            retOpt = (retOpt)+(codeParity[i-24]<<i);
+    retOpt = retOpt<<12;
+    for(i=0;i<12;i++)retOpt+=(codeParity[i]<<i);
 #endif
 
-    *distance =0;
+
 
     //----------------A Odd Quarter Lattice Decoder----------------
 
@@ -763,13 +892,12 @@ unsigned long decodeLeech(float *r, float *distance){
         for(i=0;i<24;i++)
                 retOpt = (retOpt)+(codeword[i]<<i);
 #ifndef golay
-            for(;i<36;i++)
-                retOpt = (retOpt)+(codeParity[i-24]<<i);
+    retOpt = retOpt<<12;
+    for(i=0;i<12;i++)retOpt+=(codeParity[i]<<i);
 #endif
 
 
-        *distance =0;
-        winner = 1;
+       winner = 1;
     }
 
     //----------------H_24 Half Lattice Decoder for B points----------------
@@ -793,12 +921,12 @@ unsigned long decodeLeech(float *r, float *distance){
 
         for(i=0;i<24;i++)
                 retOpt = (retOpt)+(codeword[i]<<i);
-    #ifndef golay
-            for(;i<36;i++)
-                retOpt = (retOpt)+(codeParity[i-24]<<i);
-    #endif
+#ifndef golay
+    retOpt = retOpt<<12;
+    for(i=0;i<12;i++)retOpt+=(codeParity[i]<<i);
+#endif
 
-        *distance =1;
+
         winner = 2;
 
     }
@@ -817,11 +945,11 @@ unsigned long decodeLeech(float *r, float *distance){
         for(i=0;i<24;i++)
                 retOpt = (retOpt)+(codeword[i]<<i);
     #ifndef golay
-            for(;i<36;i++)
-                retOpt = (retOpt)+(codeParity[i-24]<<i);
+        retOpt = retOpt<<12;
+        for(i=0;i<12;i++)retOpt+=(codeParity[i]<<i);
     #endif
 
-        *distance =1;
+
         winner =3;
     }
     *distance = winner;
@@ -839,6 +967,20 @@ unsigned long decodeLeech(float *r, float *distance){
     free(codeword);
     free(codeParity);
     free(leastCodeword);
+
+
+
+
+
+/*
+   unsigned long long tem = retOpt;
+    while(tem>0){
+        printf("%i",tem&1);tem>>=1;
+        printf("%i",tem&1);tem>>=1;
+        printf( "%i",tem&1);tem>>=1;
+        printf( "%i ",tem&1);tem>>=1;
+    }printf("\n");*/
+
 
     return retOpt;//leastCodeword;
 }

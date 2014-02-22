@@ -1,22 +1,49 @@
-import random
-from pyflann import *
+#import random
+#from pyflann import *
 #import random
 
 k=10
+
+from kmeans import kmeans,classifier
+from random import shuffle,random
+from pyIOUtils import *
+
+def divide(X,Y,split):
+    n = len(X)
+    mix=range(0,n)
+    shuffle(mix)
+      
+    size = int(split*n)
+      
+    trainX = [0]*size
+    trainY = [0]*size
+    testX =  [0]*(n-size)
+    testY =  [0]*(n-size)
+      
+    for i in range(0,size):
+        trainX[i] = X[mix[i]]
+        trainY[i] = Y[mix[i]]
+      
+    for i in range(size,n):
+        testX[i-size] = X[mix[i]]
+        testY[i-size] = Y[mix[i]]
+    return [array(trainX),array(trainY),array(testX),array(testY)]
+
+
 def getDataPoints(part,d,clu):
     ret = [[] for j in xrange(part*clu)]
     clusterCenters = []
     for i in range(clu):
-        variance = .5+random.random()*4
-        means = [random.random()*10 for b in range(d)] 
+        variance = .1*(d**.5)
+        means = [random() for b in range(d)] 
         clusterCenters.append(means)
         for j in range(part):
             p = [0]*d
             for k in xrange(d):
-                pts = random.random()
+                pts = random()
                 p[k]= (pts*variance+means[k])
             ret[i*part+j]=p
-    return ret,clusterCenters
+    return ret,clusterCenters 
     
 def dist(a,b):return sum((a[i]-b[i])**2 for i in xrange(len(a)))
 
@@ -43,56 +70,55 @@ def getBandwidth(vec, d):
     return distance of kth nearest neighbor
     '''
     l = sorted(d)
-    return l[k-1]
+    return l[min(k-1,len(l))]
 
-def prune(vec,d):
+
+
+
+def prune(idxs,data):
     '''
         this is where lsh db-gen would be
     '''
-    from pylab import array
-    neighbors,nearest = flann.nn(array(d),array(vec),k)
+    #from pylab import array
+    #neighbors,nearest = flann.nn(array(d),array(vec),k)
 
     ret = []
     for idx in neighbors[0]:
         ret.append(d[idx])
     
     
-    '''
-    l =sqdistance(vec,d)
-    dist = sorted( [ (l[i] , i)   for i in xrange(len(d))] ) 
-    ret = [[]]*k
-    for i in xrange(k):
-        ret[i] = d[ dist[i][1] ]
-
-    '''
     
+    #l =sqdistance(vec,d)
+    #dist = sorted( [ (l[i] , i)   for i in xrange(len(d))] ) 
+    #ret = [[]]*k
+    #for i in xrange(k):
+    #    ret[i] = d[ dist[i][1] ]
     
     return ret
     
 import copy
-from math import exp
-flann = FLANN()
+from math import exp,log
+
 def doMeanShift(dataPoints):
     '''
         perform the mean shift operations
     '''
-    from pylab import array
+    
+    means,clusters = kmeans(dataPoints,3,len(dataPoints[0]))#int(log(float(len(dataPoints)))+.5),len(dataPoints[0]))
+    ret,retvals = classifier(means,dataPoints)
+    
     origData = copy.deepcopy(dataPoints)
-    
-    if k != 0: 
-        
-        flann.build_index(array(dataPoints))
-    
     threshold = 1e-6
     newVecs = []
 
-    for vec in dataPoints:
+    for k in xrange(len(dataPoints)):
+        vec = dataPoints[k]
         diff = threshold+1
 
         if k!=0:
-            pruned = prune(vec,origData)
+            pruned = map(origData.__getitem__,  clusters[ret[k]] )
         else:
-            pruned =origData# prune(vec,origData)       
+            pruned =origData      
         
         while diff > threshold:
             d = sqdistance(vec,pruned)
@@ -123,50 +149,47 @@ def zero(m,n):
     new_matrix = [[0 for row in xrange(n)] for col in xrange(m)]
     return new_matrix
 
-def mult(matrix1,matrix2):
+#def mult(matrix1,matrix2):
     # Matrix multiplication
-    if len(matrix1[0]) != len(matrix2):
+#    if len(matrix1[0]) != len(matrix2):
         # Check matrix dimensions
-        print 'Matrices must be m*n and n*p to multiply!'
-    else:
+#        print 'Matrices must be m*n and n*p to multiply!'
+#    else:
         # Multiply if correct dimensions
-        new_matrix = zero(len(matrix1),len(matrix2[0]))
-        for i in xrange(len(matrix1)):
-            for j in xrange(len(matrix2[0])):
-                for k in xrange(len(matrix2)):
-                    new_matrix[i][j] += matrix1[i][k]*matrix2[k][j]
-        return new_matrix
+#        new_matrix = zero(len(matrix1),len(matrix2[0]))
+#        for i in xrange(len(matrix1)):
+#            for j in xrange(len(matrix2[0])):
+#                for k in xrange(len(matrix2)):
+#                    new_matrix[i][j] += matrix1[i][k]*matrix2[k][j]
+#        return new_matrix
  
 
 
 def drawPts(V,pts):
-    
-    
     x = [p[0] for p in V]
     y = [p[1] for p in V]
     z = [p[2] for p in V]
-    
-    
-
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
     
     fig = plt.figure(1)
-    ax = Axes3D(fig)
+    ax = fig.add_subplot(111, projection='3d')
     
     colorpalette = ['blue','green','red','purple','yellow','orange','gray','brown','magenta','cyan','white']
     clucolors = ['']*len(pts)
     clu = [V[0]]
     for p in range(len(V)):
-        lst = 10000.  
-        for c in range(len(clu)):
+        lst = dist(V[p],clu[0])  
+        for c in range(1,len(clu)):
             if dist(V[p],clu[c]) <lst:
                 lst = dist(V[p],clu[c])
                 clucolors[p]=colorpalette[c % len(colorpalette)]    
         if lst > 1e-2:
             clucolors[p]=colorpalette[ len(clu) % (len(colorpalette))]
             clu.append(V[p])
-    ax.scatter(x,y,z, color=clucolors, marker='x')
+    
+    #ax.scatter(x,y,z, color=clucolors, marker='x')
+    ax.scatter(x,y,z, marker='x')
     x = [p[0] for p in pts]
     y = [p[1] for p in pts]
     z = [p[2] for p in pts]
@@ -179,8 +202,10 @@ def drawPts(V,pts):
             if dist(V[p],clu[c]) <lst:
                 lst = dist(V[p],clu[c])
                 clucolors[p]=colorpalette[c% len(colorpalette)]
-    ax.scatter(x,y,z, color=clucolors,marker='o')
-    
+                
+    #ax.scatter(x,y,z, color=clucolors,marker='o')
+    ax.scatter(x,y,z,marker='o')
+    plt.show()
 
 
 def randProjectPts(pts,cluDim):
@@ -192,28 +217,27 @@ def randProjectPts(pts,cluDim):
     
 if __name__ == '__main__':
     pass        
-
-    from random import shuffle
     
-    numberofdataPoints = 1000
-    numberofclusers = 5
+    numberofdataPoints = 200
+    numberofclusers = 3
     dimensions = 3
-        
+    
     pts,cntrs =  getDataPoints(numberofdataPoints,dimensions,numberofclusers)
-    #shuffle(pts) //not really needed to prove algorithm correctness
-    
-    
+    writeMatFile(pts,"datapts")
+    pts = readMatFile("datapts")
+    shuffle(pts) #not really needed to prove algorithm correctness
     print cntrs
+    
     V = doMeanShift(pts)
-    #print V
-     
-    print "projecting data points\n"
+    print V
+    drawPts(V,pts)
+    #print "projecting data points\n"
     #ptsRedux = randProjectPts(pts,3)
     #print len(ptsRedux),len(ptsRedux[0])
-    print "performing mean shift on projected data\n"
-    
-    #V = doMeanShift(ptsRedux)
-    print V
+    #print "performing mean shift on projected data\n"
+
+
+
     
     
 

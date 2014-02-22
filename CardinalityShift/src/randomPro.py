@@ -74,13 +74,32 @@ def matInterpolator2(ErrHash, ranges,res):
 def heatMap(avgErrorMap, ranges,titlestr="",maxError = -1.0,fig=0):
     
     axis = array([i/res for i in range(len(avgErrorMap))])
+    from mpl_toolkits.mplot3d import axes3d
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    #pcolormesh(axis,axis,avgErrorMap)
+    
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    Z = []
+    X, Y = np.mgrid[-1:1:(len(axis))*1j, -1:1:(len(axis))*1j]
+    #Z = np.zeros_like(X)
+    for a in avgErrorMap:Z.append(a)
+    Z = array(Z)
+    print len(X),len(Y[0]),len(Z),len(Z[0])
+    ax.plot_surface(X,Y,Z)#, rstride=10, cstride=10)
 
     
-    pcolormesh(axis,axis,avgErrorMap)
+    
+    
     ylabel("X")
     xlabel("Y")
     
-    colorbar()
+    #fig.colorbar(Z, shrink=0.5, aspect=5)
+    plt.show()
+    #colorbar()
     title(titlestr)
     
 
@@ -88,9 +107,9 @@ def heatMap(avgErrorMap, ranges,titlestr="",maxError = -1.0,fig=0):
     #clf()
 
 def randomClusters():
-    part= 100
+    part= 300
     clu = 10
-    d = 2
+    d = 8
     pts=[]
     for i in range(clu):
         variance = randn()*randn()*.1
@@ -146,7 +165,7 @@ points = randomClusters()
 R=[[1.,0.],[0.,1.]]
 projPoints,mn,mx = projectAndDecode(points,R)
 bucketCounts = createBuckets(projPoints,mn)
-res = 50.
+res = 20.
 
 rang = mx+(0-mn) 
 

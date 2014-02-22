@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+
 typedef struct quantizer_t {
         int dimensionality;//could contain other data like entropy, nominal coding gain, density
         long (* decode)();
@@ -133,6 +134,7 @@ float* GenRandomN(int m,int n,int size){
   for(i=0;i<m*n;i++)
     M[i] = sampleNormal()*scale;
   //size throws things way to far from the lattice^^^interval, n seems better
+  // proof this is write in the rnd proj method book
 
   return M;
 }
@@ -215,6 +217,8 @@ float GenRandom(int n,int m,int *M){
 
 const unsigned long fnvHash (unsigned  long key, int tablelength )
 {
+
+
       unsigned char* bytes = (unsigned char*)(&key);
       unsigned long hash = 2166136261U;
       hash = (16777619U * hash) ^ bytes[0];
@@ -265,7 +269,7 @@ unsigned long lshHash(float *r, int len, int times, long tableLength,float* R, f
     //unsigned char rn;
     //int b=(int)((float)len/(float)6);
 
-    //if(len==q.dimensionality)return fnvHash(q.decode(r,distance), tableLength);
+    if(len==q.dimensionality)return fnvHash(q.decode(r,distance), tableLength);
 
 
      float * r1 =malloc(q.dimensionality*sizeof(float));
@@ -274,23 +278,40 @@ unsigned long lshHash(float *r, int len, int times, long tableLength,float* R, f
      unsigned long ret = 0L;
 
      do{
-           projectN(r, r1,R, len,q.dimensionality);
 
-           /*
-           //sometimes the RP throws stuff out of the lattice
-           //check min/max are near the interval [-1,1]
-           int d = 1;
-           float sump = r1[0];
-           float summ = r1[0];
-           for(;d<24;d++){
-               if(summ>r1[d])summ =r1[d] ;
-               if(sump<r1[d])sump =r1[d] ;
-           }
-           printf("%f,%f\n",summ,sump);
-           //printVecF(r1,24);
-          */
+         projectN(r, r1,R, len,q.dimensionality);//r1 if this is on
+         ret =  q.decode(r1,distance);
 
-           ret ^=  q.decode(r1,&distance);
+
+
+//           //sometimes the RP throws stuff out of the lattice
+//           //check min/max are near the interval [-1,1]
+//           int d = 1;
+//           float sump = r1[0];
+//           float summ = r1[0];
+//           float avg = 0.0;
+//           for(;d<24;d++){
+//               if(summ>r1[d])summ =r1[d] ;
+//               if(sump<r1[d])sump =r1[d] ;
+//               avg+=r1[d];
+//           }
+//           printf("proj %f, %f, %f\n",summ,avg/24.0,sump);
+//
+//           d = 1;
+//           sump = r[0];
+//           summ = r[0];
+//           avg = 0.0;
+//           for(;d<len;d++){
+//               if(summ>r[d])summ =r[d] ;
+//               if(sump<r[d])sump =r[d] ;
+//               avg+=r[d];
+//           }
+//           printf("norm %f, %f, %f\n",summ,avg/len,sump);
+
+
+
+
+
          k++;
      }while(k<times);
 
@@ -309,4 +330,3 @@ Quantizer * initializeQuantizer( long(* decode)(float*,float*),int dim)
     q->decode = decode;
     return q;
 }
-
